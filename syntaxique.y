@@ -109,9 +109,8 @@ DeclarationVarableStructure:
     | ID ID COMA
     ;
 Tableau:
-    | ACCOLADEOUVRANTE Tableau ACCOLADEFERMANTE
-    | ComaLoopTbleau
-    | ComaLoopExpression 
+    | ACCOLADEOUVRANTE Tableau ComaLoopTableau ACCOLADEFERMANTE
+    | Expression ComaLoopExpression 
     ;
 ComaLoopTableau:
     | COMA Tableau
