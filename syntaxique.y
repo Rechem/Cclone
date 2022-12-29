@@ -209,7 +209,7 @@ Statement:
     | RETURN Expression SEMICOLUMN
 List :
     LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT DimensionLoop
-    | LIST NOMSTRUCTURE CROCHETOUVRANT Expression CROCHETFERMANT DimensionLoop
+    | LIST ID CROCHETOUVRANT Expression CROCHETFERMANT DimensionLoop
     ;
 DimensionLoop :
     
@@ -218,23 +218,20 @@ DimensionLoop :
 ReturnType :
     SimpleType
     | LIST SimpleType CROCHETOUVRANT CROCHETFERMANT CrochetLoop
-    | LIST NOMSTRUCTURE CROCHETOUVRANT CROCHETFERMANT CrochetLoop
-    | NOMSTRUCTURE
+    | LIST ID CROCHETOUVRANT CROCHETFERMANT CrochetLoop
+    | ID
     ;
 CrochetLoop :
 
     | CROCHETOUVRANT CROCHETFERMANT
     ;
 
-OperateurBin :
-    ADD | SUB | MUL | MOD | DIV | POW | LESS | LESSEQUALS | GREATER | GREATEREQUALS | EQUALS | AND | OR
-    ;
 OperateurUni :
     INC | DEC
     ;
 ComplexType :
     List
-    | NOMSTRUCTURE
+    | ID
     ;
 Type :
     SimpleType
@@ -257,7 +254,7 @@ Valeur :
     ;
 
 For : 
-    FOR PARENTHESEOUVRANTE Declaration_init SEMICOLUMN Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    FOR PARENTHESEOUVRANTE DeclarationInitialisation SEMICOLUMN Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     | FOR PARENTHESEOUVRANTE Declaration IN Tableau PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     | FOR PARENTHESEOUVRANTE Declaration IN ID PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     ;
@@ -266,7 +263,7 @@ Boucle :
     While | For
     ;
 
-Appel_fonction :
+AppelFonction :
     ID PARENTHESEOUVRANTE Arguments PARENTHESEFERMANTE
     | ID PARENTHESEOUVRANTE PARENTHESEFERMANTE
     ;
@@ -275,7 +272,7 @@ Variable :
     ID
     | ID DOT Champ
     | ID CROCHETOUVRANT Expression CROCHETFERMANT
-    | Appel_fonction
+    | AppelFonction
     ;
 
 Champ :
