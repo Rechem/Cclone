@@ -149,7 +149,86 @@ Statement:
     | BREAK
     | CONTINUE
     | RETURN Expression SEMICOLUMN
+List :
+    LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT DimensionLoop
+    | LIST NOMSTRUCTURE CROCHETOUVRANT Expression CROCHETFERMANT DimensionLoop
+    ;
+DimensionLoop :
+    
+    | CROCHETOUVRANT Expression CROCHETOUVRANT
+    ;
+ReturnType :
+    SimpleType
+    | LIST SimpleType CROCHETOUVRANT CROCHETFERMANT CrochetLoop
+    | LIST NOMSTRUCTURE CROCHETOUVRANT CROCHETFERMANT CrochetLoop
+    | NOMSTRUCTURE
+    ;
+CrochetLoop :
 
+    | CROCHETOUVRANT CROCHETFERMANT
+    ;
+
+OperateurBin :
+    ADD | SUB | MUL | MOD | DIV | POW | LESS | LESSEQUALS | GREATER | GREATEREQUALS | EQUALS | AND | OR
+    ;
+OperateurUni :
+    INC | DEC
+    ;
+ComplexType :
+    List
+    | NOMSTRUCTURE
+    ;
+Type :
+    SimpleType
+    | ComplexType
+    ;
+ConditionIF :
+    IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE ConditionELSE
+    ;
+ConditionELSE :
+
+    | ELSE ConditionIF 
+    | ELSE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    ;
+While :
+    WHILE PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    ;
+
+Valeur :
+    INT | DEC | STRING | BOOL
+    ;
+
+For : 
+    FOR PARENTHESEOUVRANTE Declaration_init SEMICOLUMN Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    | FOR PARENTHESEOUVRANTE Declaration IN Tableau PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    | FOR PARENTHESEOUVRANTE Declaration IN ID PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    ;
+
+Boucle :
+    While | For
+    ;
+
+Appel_fonction :
+    ID PARENTHESEOUVRANTE Arguments PARENTHESEFERMANTE
+    | ID PARENTHESEOUVRANTE PARENTHESEFERMANTE
+    ;
+
+Variable :
+    ID
+    | ID DOT Champ
+    | ID CROCHETOUVRANT Expression CROCHETFERMANT
+    | Appel_fonction
+    ;
+
+Champ :
+    ID
+    | ID DOT Champ
+    ;
+
+Arguments :
+    Expression
+    | Expression DOT Arguments
+    ;
 
 %%
 int yyerror(const char *s) {
