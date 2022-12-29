@@ -98,42 +98,42 @@ Bloc:
     RETURN INT SEMICOLUMN
     ;
 Declaration:
-    | DeclarationSimple
+    DeclarationSimple
     | DeclarationVarableStructure
     ;
 DeclarationSimple:
-    | SimpleType ID
+    SimpleType ID
     | List ID
     ;
 DeclarationVarableStructure:
-    | ID ID COMA
+    ID ID COMA
     ;
 Tableau:
-    | ACCOLADEOUVRANTE Tableau ComaLoopTableau ACCOLADEFERMANTE
-    | Expression ComaLoopExpression 
+    ACCOLADEOUVRANTE Tableau ComaLoopTableau ACCOLADEFERMANTE
+    | ACCOLADEOUVRANTE Expression ComaLoopExpression ACCOLADEFERMANTE
     ;
 ComaLoopTableau:
-    | COMA Tableau
+    COMA Tableau
     ;
 ComaLoopExpression:
-    | COMA Expression
+    COMA Expression
     ;
 
 PureAffectation:
-    | EQUALS Expression
+    EQUALS Expression
     | EQUALS Tableau
     | DOT PureAffectation
     ;
 DeclarationInitialisation:
-    | DeclaraitonSimple PureAffectation
+    DeclaraitonSimple PureAffectation
     | CONST DeclaraitonSimple PureAffectation
     ;
 Affectation:
-    | Variable PureAffectation
+    Variable PureAffectation
     | Variable RapidAffectation
     ;
 RapidAffectation:
-    | OperateurUnaire
+    OperateurUnaire
     | ADDEQUALS Expression
     | SUBEQUALS Expression
     | MULEQUALS Expression
@@ -141,7 +141,7 @@ RapidAffectation:
     | MODEQUALS Expression
     ;
 Statement:
-    | Declaration SEMICOLUMN
+    Declaration SEMICOLUMN
     | AppelFonction SEMICOLUMN
     | Affectation SEMICOLUMN
     | Boucle
