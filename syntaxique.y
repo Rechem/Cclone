@@ -277,7 +277,7 @@ Variable :
 
 Champ :
     ID
-    | ID DOT Champ
+    | ID COMA Champ
     ;
 
 Arguments :
