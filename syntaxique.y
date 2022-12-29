@@ -87,16 +87,74 @@ Importation:
     ;
 
 Fonction:
-    FUN ID PARENTHESEOUVRANTE PARENTHESEFERMANTE FonctionReturnType ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    FUN ID PARENTHESEOUVRANTE Parametres PARENTHESEFERMANTE FonctionReturnType ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    ;
+
+Parametres:
+
+    | ReturnType ID Parametre
+    ;
+
+Parametre:
+
+    | COMA ReturnType ID Parametre
     ;
 
 FonctionReturnType:
-    COLUMN INTTYPE 
+    COLUMN ReturnType 
     ;
 
 Bloc:
-    RETURN INT SEMICOLUMN
+    
+    | Statement Bloc
     ;
+
+DeclarationStructure:
+    TYPE ID COLUMN ACCOLADEOUVRANTE Declaration DeclarationLoopDeclarationStructure ACCOLADEFERMANTE
+    ;
+
+DeclarationLoopDeclarationStructure:
+    SEMICOLUMN Declaration
+    ;
+
+SimpleType:
+    INTTYPE
+    | FLOATTYPE
+    | STRINGTYPE
+    | BOOLTYPE
+
+Expression:
+    PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE
+    | NEG Expression
+    | SUB Expression
+    | ADD Expression
+    | Expression OperateurBinaire Expression
+    | Valeur
+    | Variable
+
+OperateurBinaire:
+    EQUALS
+    | ADD
+    | SUB
+    | MUL
+    | MOD
+    | DIV
+    | POW
+    | INC
+    | DEC
+    | ADDEQUALS
+    | SUBEQUALS
+    | MULEQUALS
+    | DIVEQUALS
+    | MODEQUALS
+    | LESS
+    | LESSEQUALS
+    | GREATER
+    | GREATEREQUALS
+    | DOUBLEEQUALS
+    | AND
+    | OR
+    
 Declaration:
     DeclarationSimple
     | DeclarationVarableStructure
