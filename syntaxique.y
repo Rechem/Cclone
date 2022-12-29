@@ -250,7 +250,7 @@ While :
     ;
 
 Valeur :
-    INT | DEC | STRING | BOOL
+    INT | FLOAT | STRING | BOOL
     ;
 
 For : 
