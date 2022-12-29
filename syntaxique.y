@@ -67,6 +67,8 @@ int yyerror(const char *s);
 %token DOUBLEEQUALS
 %token AND
 %token OR
+%token CONTINUE
+%token BREAK
 
 %start ProgrammePrincipal
 %%
@@ -95,6 +97,60 @@ FonctionReturnType:
 Bloc:
     RETURN INT SEMICOLUMN
     ;
+Declaration:
+    DeclarationSimple
+    | DeclarationVarableStructure
+    ;
+DeclarationSimple:
+    SimpleType ID
+    | List ID
+    ;
+DeclarationVarableStructure:
+    ID ID COMA
+    ;
+Tableau:
+    ACCOLADEOUVRANTE Tableau ComaLoopTableau ACCOLADEFERMANTE
+    | ACCOLADEOUVRANTE Expression ComaLoopExpression ACCOLADEFERMANTE
+    ;
+ComaLoopTableau:
+    COMA Tableau
+    ;
+ComaLoopExpression:
+    COMA Expression
+    ;
+
+PureAffectation:
+    EQUALS Expression
+    | EQUALS Tableau
+    | DOT PureAffectation
+    ;
+DeclarationInitialisation:
+    DeclaraitonSimple PureAffectation
+    | CONST DeclaraitonSimple PureAffectation
+    ;
+Affectation:
+    Variable PureAffectation
+    | Variable RapidAffectation
+    ;
+RapidAffectation:
+    OperateurUnaire
+    | ADDEQUALS Expression
+    | SUBEQUALS Expression
+    | MULEQUALS Expression
+    | DIVEQUALS Expression
+    | MODEQUALS Expression
+    ;
+Statement:
+    Declaration SEMICOLUMN
+    | AppelFonction SEMICOLUMN
+    | Affectation SEMICOLUMN
+    | Boucle
+    | Condition
+    | BREAK
+    | CONTINUE
+    | RETURN Expression SEMICOLUMN
+
+
 %%
 int yyerror(const char *s) {
   printf("%s\n",s);
