@@ -1,0 +1,30 @@
+import "abcd";
+fun main(){
+print("Hello world");
+str string = "bonjour";
+int x = 3;
+float val;
+const int a = 2;
+}
+
+fun fonction1(int var) : int{
+    return 0;
+}
+
+fun fonction2(){
+    List int [2] tab1= {{1},{2}} ;
+    Type Etudiant : {int b; str c};
+    Etudiant a;
+    a.b = a[43*2 + a.c];
+    a.b.c[e.d + 2] = c[11/b+2-e.d];
+
+for(int item in tab1){
+        if(a>5){
+List int [2] tab1= {1,2} ;
+int first_item = tab1 [0];
+        }else{
+
+        }
+    }
+
+}

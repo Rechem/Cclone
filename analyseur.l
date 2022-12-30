@@ -7,8 +7,8 @@
 
 WHITESPACE          [[:space:]]+
 
-FLOAT               [+-]?([0-9]*\.[0-9]+)([eE][+-]?[0-9])?
-INT                 [+-]?[0-9]+([eE][+-]?[0-9])?
+FLOAT               ([0-9]*\.[0-9]+)([eE][+-]?[0-9])?
+INT                 [0-9]+([eE][+-]?[0-9])?
 STRING               \".*\"
 BOOL                (true|false)
 
@@ -49,6 +49,7 @@ DIV "/"
 POW "**"
 INC "++"
 DEC "--"
+NOTEQUALS "!="
 ADDEQUALS "+="
 SUBEQUALS "-="
 MULEQUALS "*="
@@ -111,6 +112,7 @@ ID                  [A-Za-z_][A-Za-z0-9_]*
 {POW}     return(POW);
 {INC}     return(INC);
 {DEC}     return(DEC);
+{NOTEQUALS}     return(NOTEQUALS);
 {ADDEQUALS}     return(ADDEQUALS);
 {SUBEQUALS}     return(SUBEQUALS);
 {MULEQUALS}     return(MULEQUALS);

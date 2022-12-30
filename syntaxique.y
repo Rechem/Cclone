@@ -56,6 +56,7 @@ int yyerror(const char *s);
 %token POW
 %token INC
 %token DEC
+%token NOTEQUALS
 %token ADDEQUALS
 %token SUBEQUALS
 %token MULEQUALS
@@ -72,22 +73,34 @@ int yyerror(const char *s);
 %token CONTINUE
 %token BREAK
 
+%left COMA
+%left OR
+%left AND
+%left NEG
+
+%nonassoc EQUALS LESS GREATER LESSEQUALS GREATEREQUALS
+%nonassoc NOTEQUALS ADDEQUALS SUBEQUALS MULEQUALS DIVEQUALS MODEQUALS
+%left ADD SUB
+%left MULT DIV MOD
+
+%nonassoc ADDRESSVALUE POINTERVALUE
+%left DOT OPENBRACKET CLOSEBRACKET
+%left POWER
+%left OPENPARENTHESIS
+
 %start ProgrammePrincipal
 %%
 
 ProgrammePrincipal: %empty
     | Importation
-    | Fonction
     ;
 
 Importation: %empty
-    | IMPORT STRING SEMICOLUMN {printf("import statement\n");}
-    | Importation
-    | Fonction {printf("function statement\n");}
+    | IMPORT STRING SEMICOLUMN Importation Fonction {printf("import statement\n");}
     ;
 
-Fonction:
-    FUN ID PARENTHESEOUVRANTE Parametres PARENTHESEFERMANTE FonctionReturnType ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+Fonction: %empty
+    | FUN ID PARENTHESEOUVRANTE Parametres PARENTHESEFERMANTE FonctionReturnType ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE Fonction {printf("function statement\n");}
     ;
 
 Parametres: %empty
@@ -150,6 +163,11 @@ OperateurBinaire:
     | AND
     | OR
     
+DeclarationInitialisation:
+    DeclarationSimple PureAffectation
+    | CONST DeclarationSimple PureAffectation
+    ;
+
 DeclarationSimple:
     SimpleType ID
     | List ID
@@ -167,11 +185,11 @@ Tableau:
     ACCOLADEOUVRANTE Tableau ComaLoopTableau ACCOLADEFERMANTE
     | ACCOLADEOUVRANTE Expression ComaLoopExpression ACCOLADEFERMANTE
     ;
-ComaLoopTableau:
-    COMA Tableau
+ComaLoopTableau: %empty
+    | COMA Tableau
     ;
-ComaLoopExpression:
-    COMA Expression
+ComaLoopExpression: %empty
+    | COMA Expression
     ;
 
 PureAffectation:
@@ -179,10 +197,7 @@ PureAffectation:
     | EQUALS Tableau
     | DOT PureAffectation
     ;
-DeclarationInitialisation:
-    DeclarationSimple PureAffectation
-    | CONST DeclarationSimple PureAffectation
-    ;
+
 Affectation:
     Variable PureAffectation
     | Variable RapidAffectation
@@ -197,7 +212,9 @@ RapidAffectation:
     ;
     
 Statement:
-    Declaration SEMICOLUMN
+    DeclarationInitialisation SEMICOLUMN
+    | DeclarationStructure SEMICOLUMN
+    | Declaration SEMICOLUMN
     | AppelFonction SEMICOLUMN
     | Affectation SEMICOLUMN
     | Boucle
@@ -273,14 +290,9 @@ AppelFonction:
 
 Variable:
     ID
-    | ID DOT Champ
+    | ID DOT Variable
     | ID CROCHETOUVRANT Expression CROCHETFERMANT
     | AppelFonction
-    ;
-
-Champ:
-    ID
-    | ID DOT Champ
     ;
 
 Arguments:
@@ -302,10 +314,7 @@ int main (void)
         printf("erreur dans l'ouverture du fichier");
         return 1;
     }
-    do
-    {
-        yyparse();
-    }while (!feof(yyin));  
+    yyparse();  
 
 printf("succ\n");
 
