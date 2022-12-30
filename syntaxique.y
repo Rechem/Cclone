@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define YYDEBUG 1
+
 int yylex();
 int yyerror(const char *s);
 %}
@@ -73,39 +75,34 @@ int yyerror(const char *s);
 %start ProgrammePrincipal
 %%
 
-ProgrammePrincipal:
-    
+ProgrammePrincipal: %empty
     | Importation
     | Fonction
     ;
 
-Importation:
-    
-    | IMPORT STRING SEMICOLUMN
+Importation: %empty
+    | IMPORT STRING SEMICOLUMN {printf("import statement\n");}
     | Importation
-    | Fonction
+    | Fonction {printf("function statement\n");}
     ;
 
 Fonction:
     FUN ID PARENTHESEOUVRANTE Parametres PARENTHESEFERMANTE FonctionReturnType ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     ;
 
-Parametres:
-
+Parametres: %empty
     | ReturnType ID Parametre
     ;
 
-Parametre:
-
+Parametre: %empty
     | COMA ReturnType ID Parametre
     ;
 
-FonctionReturnType:
-    COLUMN ReturnType 
+FonctionReturnType: %empty
+    | COLUMN ReturnType 
     ;
 
-Bloc:
-    
+Bloc: %empty
     | Statement Bloc
     ;
 
@@ -113,8 +110,8 @@ DeclarationStructure:
     TYPE ID COLUMN ACCOLADEOUVRANTE Declaration DeclarationLoopDeclarationStructure ACCOLADEFERMANTE
     ;
 
-DeclarationLoopDeclarationStructure:
-    SEMICOLUMN Declaration
+DeclarationLoopDeclarationStructure: %empty
+    | SEMICOLUMN Declaration
     ;
 
 SimpleType:
@@ -140,8 +137,6 @@ OperateurBinaire:
     | MOD
     | DIV
     | POW
-    | INC
-    | DEC
     | ADDEQUALS
     | SUBEQUALS
     | MULEQUALS
@@ -155,16 +150,18 @@ OperateurBinaire:
     | AND
     | OR
     
-Declaration:
-    DeclarationSimple
-    | DeclarationVarableStructure
-    ;
 DeclarationSimple:
     SimpleType ID
     | List ID
     ;
+
+Declaration:
+    DeclarationSimple
+    | DeclarationVarableStructure
+    ;
+
 DeclarationVarableStructure:
-    ID ID COMA
+    ID ID
     ;
 Tableau:
     ACCOLADEOUVRANTE Tableau ComaLoopTableau ACCOLADEFERMANTE
@@ -183,8 +180,8 @@ PureAffectation:
     | DOT PureAffectation
     ;
 DeclarationInitialisation:
-    DeclaraitonSimple PureAffectation
-    | CONST DeclaraitonSimple PureAffectation
+    DeclarationSimple PureAffectation
+    | CONST DeclarationSimple PureAffectation
     ;
 Affectation:
     Variable PureAffectation
@@ -198,91 +195,97 @@ RapidAffectation:
     | DIVEQUALS Expression
     | MODEQUALS Expression
     ;
+    
 Statement:
     Declaration SEMICOLUMN
     | AppelFonction SEMICOLUMN
     | Affectation SEMICOLUMN
     | Boucle
     | Condition
-    | BREAK
-    | CONTINUE
+    | BREAK SEMICOLUMN
+    | CONTINUE SEMICOLUMN
+    | RETURN SEMICOLUMN
     | RETURN Expression SEMICOLUMN
-List :
+    ;
+
+List:
     LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT DimensionLoop
     | LIST ID CROCHETOUVRANT Expression CROCHETFERMANT DimensionLoop
     ;
-DimensionLoop :
-    
+DimensionLoop: %empty
     | CROCHETOUVRANT Expression CROCHETOUVRANT
     ;
-ReturnType :
+ReturnType:
     SimpleType
     | LIST SimpleType CROCHETOUVRANT CROCHETFERMANT CrochetLoop
     | LIST ID CROCHETOUVRANT CROCHETFERMANT CrochetLoop
     | ID
     ;
-CrochetLoop :
-
+CrochetLoop: %empty
     | CROCHETOUVRANT CROCHETFERMANT
     ;
 
-OperateurUni :
-    INC | DEC
+OperateurUnaire:
+    INC
+    | DEC
     ;
-ComplexType :
+ComplexType:
     List
     | ID
     ;
-Type :
+Type:
     SimpleType
     | ComplexType
     ;
-ConditionIF :
+Condition:
     IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE ConditionELSE
     ;
-ConditionELSE :
-
-    | ELSE ConditionIF 
+ConditionELSE: %empty
+    | ELSE Condition 
     | ELSE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     ;
-While :
+While:
     WHILE PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     ;
 
-Valeur :
-    INT | FLOAT | STRING | BOOL
+Valeur:
+    INT
+    | FLOAT
+    | STRING
+    | BOOL
     ;
 
-For : 
+For: 
     FOR PARENTHESEOUVRANTE DeclarationInitialisation SEMICOLUMN Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     | FOR PARENTHESEOUVRANTE Declaration IN Tableau PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
-    | FOR PARENTHESEOUVRANTE Declaration IN ID PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    | FOR PARENTHESEOUVRANTE Declaration IN Variable PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     ;
 
-Boucle :
-    While | For
+Boucle:
+    While
+    | For
     ;
 
-AppelFonction :
+AppelFonction:
     ID PARENTHESEOUVRANTE Arguments PARENTHESEFERMANTE
     | ID PARENTHESEOUVRANTE PARENTHESEFERMANTE
     ;
 
-Variable :
+Variable:
     ID
     | ID DOT Champ
     | ID CROCHETOUVRANT Expression CROCHETFERMANT
     | AppelFonction
     ;
 
-Champ :
+Champ:
     ID
-    | ID COMA Champ
+    | ID DOT Champ
     ;
 
-Arguments :
+Arguments:
     Expression
-    | Expression DOT Arguments
+    | Expression COMA Arguments
     ;
 
 %%
@@ -292,7 +295,20 @@ int yyerror(const char *s) {
 
 int main (void)
 {
-    yyparse();
+    yydebug = 1;
+    extern FILE *yyin;
+    yyin=fopen("prg.txt", "r");
+    if(yyin==NULL){
+        printf("erreur dans l'ouverture du fichier");
+        return 1;
+    }
+    do
+    {
+        yyparse();
+    }while (!feof(yyin));  
+
+printf("succ\n");
+
     return 0;
 }
 
