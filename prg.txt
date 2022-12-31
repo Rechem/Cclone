@@ -7,10 +7,14 @@ float val;
 const int a = 2;
 }
 
-fun fonction1(int var) : int{
+/*
+fusn fonction1(int var) : int{
+    
+    if{x=3}
     return 0;
+    
 }
-
+*/
 fun fonction2(){
     List int [2] tab1= {{1},{2}} ;
     Type Etudiant : {int b; str c};
@@ -22,8 +26,8 @@ for(int item in tab1){
         if(a>5){
 List int [2] tab1= {1,2} ;
 int first_item = tab1 [0];
-        }else{
-
+        }else if (bababoi(a,2,3,4)){
+            
         }
     }
 

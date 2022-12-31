@@ -1,13 +1,14 @@
+%define parse.error verbose
+
 %{
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
-
 #define YYDEBUG 1
 
-int yylex();
-int yyerror(const char *s);
+
 %}
 
 // les terminaux only
@@ -83,12 +84,25 @@ int yyerror(const char *s);
 %left ADD SUB
 %left MULT DIV MOD
 
-%nonassoc ADDRESSVALUE POINTERVALUE
-%left DOT OPENBRACKET CLOSEBRACKET
-%left POWER
-%left OPENPARENTHESIS
+%left DOT CROCHETOUVRANT CROCHETFERMANT
+%left POW
+%left PARENTHESEOUVRANTE
 
 %start ProgrammePrincipal
+%{
+extern FILE *yyin;
+extern int yylineno;
+extern int yyleng;
+extern int yylex();
+
+char* file = "prg.txt";
+
+int currentColumn = 1;
+
+void yysuccess(char *s);
+void yyerror(const char *s);
+void showLexicalError();
+%}
 %%
 
 ProgrammePrincipal: %empty
@@ -96,11 +110,11 @@ ProgrammePrincipal: %empty
     ;
 
 Importation: %empty
-    | IMPORT STRING SEMICOLUMN Importation Fonction {printf("import statement\n");}
+    | IMPORT STRING SEMICOLUMN Importation Fonction
     ;
 
 Fonction: %empty
-    | FUN ID PARENTHESEOUVRANTE Parametres PARENTHESEFERMANTE FonctionReturnType ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE Fonction {printf("function statement\n");}
+    | FUN ID PARENTHESEOUVRANTE Parametres PARENTHESEFERMANTE FonctionReturnType ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE Fonction
     ;
 
 Parametres: %empty
@@ -230,7 +244,7 @@ List:
     | LIST ID CROCHETOUVRANT Expression CROCHETFERMANT DimensionLoop
     ;
 DimensionLoop: %empty
-    | CROCHETOUVRANT Expression CROCHETOUVRANT
+    | CROCHETOUVRANT Expression CROCHETOUVRANT DimensionLoop
     ;
 ReturnType:
     SimpleType
@@ -239,7 +253,7 @@ ReturnType:
     | ID
     ;
 CrochetLoop: %empty
-    | CROCHETOUVRANT CROCHETFERMANT
+    | CROCHETOUVRANT CROCHETFERMANT CrochetLoop
     ;
 
 OperateurUnaire:
@@ -301,26 +315,49 @@ Arguments:
     ;
 
 %%
-int yyerror(const char *s) {
-  printf("%s\n",s);
+
+void yysuccess(char *s){
+    // fprintf(stdout, "%d: %s\n", yylineno, s);
+    currentColumn+=yyleng;
+}
+
+void yyerror(const char *s) {
+  fprintf(stdout, "File '%s', line %d, character %d :  %s \n", file, yylineno, currentColumn, s);
 }
 
 int main (void)
 {
-    yydebug = 1;
-    extern FILE *yyin;
-    yyin=fopen("prg.txt", "r");
+    // yydebug = 1;
+    yyin=fopen(file, "r");
     if(yyin==NULL){
         printf("erreur dans l'ouverture du fichier");
         return 1;
     }
     yyparse();  
 
-printf("succ\n");
+// printf("succ\n");
 
     return 0;
 }
 
+void showLexicalError() {
+
+    char line[256], introError[80]; 
+
+    fseek(yyin, 0, SEEK_SET);
+    
+    int i = 0; 
+
+    while (fgets(line, sizeof(line), yyin)) { 
+        i++; 
+        if(i == yylineno) break;  
+    } 
+        
+    sprintf(introError, "Lexical error in Line %d : Unrecognized character : ", yylineno);
+    printf("%s%s", introError, line);  
+    int j=1;
+    while(j<currentColumn+strlen(introError)) { printf(" "); j++; }
+    printf("^\n");
 
 
-
+}
