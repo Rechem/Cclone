@@ -209,7 +209,7 @@ ComaLoopExpression: %empty
 PureAffectation:
     EQUALS Expression
     | EQUALS Tableau
-    | DOT PureAffectation
+    | DOT Affectation
     ;
 
 Affectation:

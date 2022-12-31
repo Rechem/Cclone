@@ -7,20 +7,18 @@ float val;
 const int a = 2;
 }
 
-/*
-fusn fonction1(int var) : int{
-    
-    if{x=3}
+fun fonction1(int var) : int{
+    if(x=3){}
     return 0;
     
 }
-*/
+
 fun fonction2(){
     List int [2] tab1= {{1},{2}} ;
     Type Etudiant : {int b; str c};
     Etudiant a;
     a.b = a[43*2 + a.c];
-    a.b.c[e.d + 2] = c[11/b+2-e.d];
+    a.b.c[e.d + 2] = {11/b+2-e.d,  {int a = 3}};
 
 for(int item in tab1){
         if(a>5){
