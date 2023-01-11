@@ -88,7 +88,7 @@
 %left POW
 %left PARENTHESEOUVRANTE
 
-%start ProgrammePrincipal
+%start Bloc
 %{
 extern FILE *yyin;
 extern int yylineno;
@@ -105,40 +105,8 @@ void showLexicalError();
 %}
 %%
 
-ProgrammePrincipal: %empty
-    | Importation
-    ;
-
-Importation: %empty
-    | IMPORT STRING SEMICOLUMN Importation Fonction
-    ;
-
-Fonction: %empty
-    | FUN ID PARENTHESEOUVRANTE Parametres PARENTHESEFERMANTE FonctionReturnType ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE Fonction
-    ;
-
-Parametres: %empty
-    | ReturnType ID Parametre
-    ;
-
-Parametre: %empty
-    | COMA ReturnType ID Parametre
-    ;
-
-FonctionReturnType: %empty
-    | COLUMN ReturnType 
-    ;
-
 Bloc: %empty
     | Statement Bloc
-    ;
-
-DeclarationStructure:
-    TYPE ID COLUMN ACCOLADEOUVRANTE Declaration DeclarationLoopDeclarationStructure ACCOLADEFERMANTE
-    ;
-
-DeclarationLoopDeclarationStructure: %empty
-    | SEMICOLUMN Declaration
     ;
 
 SimpleType:
@@ -178,38 +146,26 @@ OperateurBinaire:
     | OR
     
 DeclarationInitialisation:
-    DeclarationSimple PureAffectation
-    | CONST DeclarationSimple PureAffectation
+    Declaration PureAffectation
+    | CONST Declaration PureAffectation
     ;
 
-DeclarationSimple:
+Declaration:
     SimpleType ID
     | List ID
     ;
 
-Declaration:
-    DeclarationSimple
-    | DeclarationVarableStructure
-    ;
-
-DeclarationVarableStructure:
-    ID ID
-    ;
 Tableau:
-    ACCOLADEOUVRANTE Tableau ComaLoopTableau ACCOLADEFERMANTE
-    | ACCOLADEOUVRANTE Expression ComaLoopExpression ACCOLADEFERMANTE
+    ACCOLADEOUVRANTE Expression ComaLoopExpression ACCOLADEFERMANTE
     ;
-ComaLoopTableau: %empty
-    | COMA Tableau
-    ;
+    
 ComaLoopExpression: %empty
-    | COMA Expression
+    | COMA Expression ComaLoopExpression
     ;
 
 PureAffectation:
     EQUALS Expression
     | EQUALS Tableau
-    | DOT Affectation
     ;
 
 Affectation:
@@ -227,50 +183,27 @@ RapidAffectation:
     
 Statement:
     DeclarationInitialisation SEMICOLUMN
-    | DeclarationStructure SEMICOLUMN
     | Declaration SEMICOLUMN
-    | AppelFonction SEMICOLUMN
     | Affectation SEMICOLUMN
     | Boucle
     | Condition
     | BREAK SEMICOLUMN
     | CONTINUE SEMICOLUMN
-    | RETURN SEMICOLUMN
-    | RETURN Expression SEMICOLUMN
     ;
 
 List:
-    LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT DimensionLoop
-    | LIST ID CROCHETOUVRANT Expression CROCHETFERMANT DimensionLoop
-    ;
-DimensionLoop: %empty
-    | CROCHETOUVRANT Expression CROCHETOUVRANT DimensionLoop
-    ;
-ReturnType:
-    SimpleType
-    | LIST SimpleType CROCHETOUVRANT CROCHETFERMANT CrochetLoop
-    | LIST ID CROCHETOUVRANT CROCHETFERMANT CrochetLoop
-    | ID
-    ;
-CrochetLoop: %empty
-    | CROCHETOUVRANT CROCHETFERMANT CrochetLoop
+    LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT
     ;
 
 OperateurUnaire:
     INC
     | DEC
     ;
-ComplexType:
-    List
-    | ID
-    ;
-Type:
-    SimpleType
-    | ComplexType
-    ;
+    
 Condition:
     IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE ConditionELSE
     ;
+
 ConditionELSE: %empty
     | ELSE Condition 
     | ELSE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
@@ -297,21 +230,9 @@ Boucle:
     | For
     ;
 
-AppelFonction:
-    ID PARENTHESEOUVRANTE Arguments PARENTHESEFERMANTE
-    | ID PARENTHESEOUVRANTE PARENTHESEFERMANTE
-    ;
-
 Variable:
     ID
-    | ID DOT Variable
     | ID CROCHETOUVRANT Expression CROCHETFERMANT
-    | AppelFonction
-    ;
-
-Arguments:
-    Expression
-    | Expression COMA Arguments
     ;
 
 %%

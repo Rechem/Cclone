@@ -1,3 +1,7 @@
+make cclone
+
+or
+
 flex -l analyseur.l 
 bison -d syntaxique.y 
 gcc syntaxique.tab.c lex.yy.c -lm -lfl -o test.exe
