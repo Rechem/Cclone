@@ -1,0 +1,5 @@
+lex.yy.c
+syntaxique.tab.c
+syntaxique.tab.h
+test.exe
+prg.txt
