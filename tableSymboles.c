@@ -9,21 +9,24 @@ symbole * _allouerSymbole(){
     return pointer;
 }
 
-symbole * creerSymbole(char * nom, int type, char * valeur, bool isConstant){
+symbole * creerSymbole(char * nom, int type, bool isConstant){
     symbole * pointer = _allouerSymbole();
-    strncpy(pointer->nom, nom, sizeof(nom));
+    
+    strcpy(pointer->nom, nom);
     pointer->type = type;
-    strncpy(pointer->valeur, valeur, sizeof(valeur));
     pointer->isConstant = isConstant;
     return pointer;
 }
 
-void insererSymbole(symbole * tableSymboles, symbole * nouveauSymbole){
+void insererSymbole(symbole ** tableSymboles, symbole * nouveauSymbole){
+    if(nouveauSymbole == NULL)
+        return;
+
     if (tableSymboles != NULL){
-        nouveauSymbole->suivant = tableSymboles;
+        nouveauSymbole->suivant = *tableSymboles;
     }
 
-    tableSymboles = nouveauSymbole;
+    *tableSymboles = nouveauSymbole;
 
 }
 
@@ -36,36 +39,36 @@ void afficherTableSymboles(symbole * tableSymboles){
 
     symbole * pointer = tableSymboles;
 
-    printf("********************************************************************\n");
-    printf("    ------------      ------        ----------          ----------  \n");
-    printf("        Name           Type            Value             Constant   \n");
-    printf("    ------------      ------        ----------          ----------  \n");
+    printf("************************ TABLE DES SYMBOLES ************************\n");
+    printf("--------------------------------------------------------------------\n");
+    printf("\tName\t\tType\t\tValue\t\tConstant   \n");
 
     while(pointer != NULL){  
+    printf("--------------------------------------------------------------------\n");
 
         char type[255];
         getTypeChar(pointer, type);
 
-        printf("       [%s]", pointer->nom);
-        printf("       [%s]", type);
-        printf("       [%s]", pointer->valeur);
+        printf("\t%s", pointer->nom);
+        printf("\t\t%s", type);
+        printf("\t\t%s", pointer->valeur);
+        printf("\t\t%s\n", pointer->isConstant ? "Oui" : "Non");
         pointer=pointer->suivant;
     }
 
-    printf("******************************************\n");
+    printf("********************************************************************\n");
 }
 
-symbole * recherche(symbole * tableSymboles, char * nom){
+symbole * rechercherSymbole(symbole * tableSymboles, char * nom){
 
     if(tableSymboles == NULL || nom == NULL){
-        printf("No recherche because NULL");
         return NULL;
     }
     
     symbole * pointer = tableSymboles;
 
     while(pointer!=NULL){
-        if (strcmp(pointer->nom, nom)){
+        if (!strcmp(pointer->nom, nom)){
             return pointer;
         }
         pointer = pointer->suivant;
@@ -79,7 +82,7 @@ void getNom(symbole * symbole, char * nom){
         printf("No nom type because NULL");
         return;
     }
-    strncpy(nom, symbole->nom, sizeof(symbole->nom));
+    strcpy(nom, symbole->nom);
 }
 
 void getValeur(symbole * symbole, char * valeur){
@@ -87,7 +90,7 @@ void getValeur(symbole * symbole, char * valeur){
         printf("No valeur type because NULL");
         return;
     }
-    strncpy(valeur, symbole->valeur, sizeof(symbole->valeur));
+    strcpy(valeur, symbole->valeur);
 }
 
 int getType(symbole * symbole){
@@ -136,5 +139,5 @@ void setValeur(symbole * symbole, char * valeur){
         printf("Value non set because NULL");
         return;
     }
-    strncpy(symbole->valeur, valeur, sizeof(valeur));
+    strcpy(symbole->valeur, valeur);
 }

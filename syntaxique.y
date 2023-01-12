@@ -1,24 +1,38 @@
 %define parse.error verbose
 
 %{
+#define YYDEBUG 1
+%}
+
+%code requires{
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <math.h>
-#define YYDEBUG 1
+#include "semantic.h"
+#include "tableSymboles.h"
 
+}
 
-%}
+%union{
+    char identifier[255];
+    int type;
+    int integerValue;
+    double floatValue;
+    bool booleanValue;
+    bool isConstant;
+    char stringValue[255];
+    symbole * symbole;
+    expression expression;
+}
 
 // les terminaux only
 %token IMPORT
 %token FUN
 %token CONST
-%token INTTYPE
-%token STRINGTYPE
-%token FLOATTYPE
-%token BOOLTYPE
+%token <type> INTTYPE STRINGTYPE FLOATTYPE BOOLTYPE
 %token LIST
 %token TYPE
 %token IF
@@ -28,12 +42,12 @@
 %token IN
 %token RETURN
 
-%token ID
+%token <identifier> ID
 
-%token INT
-%token STRING
-%token BOOL
-%token FLOAT
+%token <integerValue> INT
+%token <stringValue> STRING
+%token <booleanValue> BOOL
+%token <floatValue > FLOAT
 
 %token SEMICOLUMN
 %token COLUMN
@@ -74,12 +88,13 @@
 %token CONTINUE
 %token BREAK
 
-%left COMA
-%left OR
-%left AND
-%left NEG
+%type <expression> Expression;
+%type <symbole> Declaration;
+%type <type> SimpleType;
 
-%nonassoc EQUALS LESS GREATER LESSEQUALS GREATEREQUALS
+%left COMA OR AND NEG
+
+%nonassoc DOUBLEEQUALS EQUALS LESS GREATER LESSEQUALS GREATEREQUALS
 %nonassoc NOTEQUALS ADDEQUALS SUBEQUALS MULEQUALS DIVEQUALS MODEQUALS
 %left ADD SUB
 %left MULT DIV MOD
@@ -95,9 +110,13 @@ extern int yylineno;
 extern int yyleng;
 extern int yylex();
 
-char* file = "prg.txt";
+char* file = "mytester.txt";
 
 int currentColumn = 1;
+
+symbole * tableSymboles = NULL;
+
+bool constFlag = false;
 
 void yysuccess(char *s);
 void yyerror(const char *s);
@@ -110,19 +129,22 @@ Bloc: %empty
     ;
 
 SimpleType:
-    INTTYPE
-    | FLOATTYPE
-    | STRINGTYPE
-    | BOOLTYPE
+    INTTYPE { $$ = TYPE_INTEGER;}
+    | FLOATTYPE { $$ = TYPE_FLOAT; }
+    | STRINGTYPE { $$ = TYPE_STRING; }
+    | BOOLTYPE { $$ = TYPE_BOOLEAN; }
 
 Expression:
-    PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE
-    | NEG Expression
-    | SUB Expression
-    | ADD Expression
-    | Expression OperateurBinaire Expression
-    | Valeur
-    | Variable
+    // PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE
+    // | NEG Expression
+    // | SUB Expression
+    // | ADD Expression
+    // | Expression OperateurBinaire Expression
+    // | Variable
+    INT { $$.type = TYPE_INTEGER; $$.integerValue = $1; }
+    | FLOAT { $$.type = TYPE_FLOAT; $$.floatValue = $1; }
+    | STRING { $$.type = TYPE_STRING; strcpy($$.stringValue, $1); }
+    | BOOL { $$.type = TYPE_BOOLEAN; $$.booleanValue = $1; }
 
 OperateurBinaire:
     EQUALS
@@ -146,39 +168,66 @@ OperateurBinaire:
     | OR
     
 DeclarationInitialisation:
-    Declaration PureAffectation
-    | CONST Declaration PureAffectation
+    Declaration EQUALS Expression {
+        // TODO MAKE A STRUCT FOR EXPRESSION TYPE AND DECLARATION 
+        if($1 != NULL){
+            if($1->type == $3.type){
+                char valeurString[255];
+                valeurToString(&$3, valeurString);
+                setValeur($1, valeurString);
+            }else{
+                printf("Type mismatch\n");
+            }
+        }
+    }  
+    |CONST {constFlag = true;} Declaration EQUALS Expression {
+        // TODO MAKE A STRUCT FOR EXPRESSION TYPE AND DECLARATION 
+        if($3 != NULL){
+            if($3->type == $5.type){
+                char valeurString[255];
+                valeurToString(&$5, valeurString);
+                setValeur($3, valeurString);
+            }else{
+                printf("Type mismatch\n");
+            }
+        }
+    }
     ;
 
 Declaration:
-    SimpleType ID
-    | List ID
-    ;
-
-Tableau:
-    ACCOLADEOUVRANTE Expression ComaLoopExpression ACCOLADEFERMANTE
+    SimpleType ID {
+        if(rechercherSymbole(tableSymboles, $2) == NULL){
+            // Si l'ID n'existe pas alors l'inserer
+            symbole * nouveauSymbole = creerSymbole($2, $1, false);
+            insererSymbole(&tableSymboles, nouveauSymbole);
+            $$ = nouveauSymbole;
+        }else{
+            printf("Identifiant deja declare : %s\n", $2);
+            $$ = NULL;
+        }
+    }
+    |CONST SimpleType ID {
+        if(rechercherSymbole(tableSymboles, $3) == NULL){
+            // Si l'ID n'existe pas alors l'inserer
+            symbole * nouveauSymbole = creerSymbole($3, $2, true);
+            insererSymbole(&tableSymboles, nouveauSymbole);
+            $$ = nouveauSymbole;
+        }else{
+            printf("Identifiant deja declare : %s\n", $3);
+            $$ = NULL;
+        }
+    }
     ;
     
-ComaLoopExpression: %empty
-    | COMA Expression ComaLoopExpression
-    ;
-
-PureAffectation:
-    EQUALS Expression
-    | EQUALS Tableau
-    ;
-
 Affectation:
-    Variable PureAffectation
-    | Variable RapidAffectation
-    ;
-RapidAffectation:
-    OperateurUnaire
-    | ADDEQUALS Expression
-    | SUBEQUALS Expression
-    | MULEQUALS Expression
-    | DIVEQUALS Expression
-    | MODEQUALS Expression
+    Variable EQUALS Expression { /*here we need to fetch the symbole first*/ }
+    | Variable INC
+    | Variable DEC
+    | Variable ADDEQUALS Expression
+    | Variable SUBEQUALS Expression
+    | Variable MULEQUALS Expression
+    | Variable DIVEQUALS Expression
+    | Variable MODEQUALS Expression
     ;
     
 Statement:
@@ -190,15 +239,6 @@ Statement:
     | BREAK SEMICOLUMN
     | CONTINUE SEMICOLUMN
     ;
-
-List:
-    LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT
-    ;
-
-OperateurUnaire:
-    INC
-    | DEC
-    ;
     
 Condition:
     IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE ConditionELSE
@@ -208,21 +248,13 @@ ConditionELSE: %empty
     | ELSE Condition 
     | ELSE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     ;
+
 While:
     WHILE PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     ;
 
-Valeur:
-    INT
-    | FLOAT
-    | STRING
-    | BOOL
-    ;
-
 For: 
     FOR PARENTHESEOUVRANTE DeclarationInitialisation SEMICOLUMN Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
-    | FOR PARENTHESEOUVRANTE Declaration IN Tableau PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
-    | FOR PARENTHESEOUVRANTE Declaration IN Variable PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
     ;
 
 Boucle:
@@ -231,8 +263,7 @@ Boucle:
     ;
 
 Variable:
-    ID
-    | ID CROCHETOUVRANT Expression CROCHETFERMANT
+    ID {  }
     ;
 
 %%
@@ -255,6 +286,13 @@ int main (void)
         return 1;
     }
     yyparse();  
+
+    afficherTableSymboles(tableSymboles);
+    if(tableSymboles != NULL){
+        free(tableSymboles);
+    }
+
+    fclose(yyin);
 
 // printf("succ\n");
 

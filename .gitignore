@@ -3,3 +3,5 @@ syntaxique.tab.c
 syntaxique.tab.h
 test.exe
 prg.txt
+.gitignore
+mytester.txt

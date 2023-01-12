@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #define TYPE_BOOLEAN 0
 #define TYPE_INTEGER 1
 #define TYPE_FLOAT 2
@@ -25,13 +27,13 @@ symbole * _allouerSymbole();
 
 void _mapTypeIntToChar(int type, char * typeChar);
 
-symbole * creerSymbole(char * nom, int type, char * valeur, bool isConstant);
+symbole * creerSymbole(char * nom, int type, bool isConstant);
 
-void insererSymbole(symbole * tableSymboles, symbole * nouveauSymbole);
+void insererSymbole(symbole ** tableSymboles, symbole * nouveauSymbole);
 
 void afficherTableSymboles(symbole * tableSymboles);
 
-symbole * recherche(symbole * tableSymboles, char * nom);
+symbole * rechercherSymbole(symbole * tableSymboles, char * nom);
 
 void getNom(symbole * symbole, char * nom);
 

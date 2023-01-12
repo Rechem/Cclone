@@ -1,6 +1,7 @@
 %{
-#include <stdio.h>
+#include <stdbool.h>
 #include "syntaxique.tab.h"
+
 
 extern void yysuccess(char *s);
 extern void yyerror(const char *s);
@@ -17,9 +18,6 @@ INT                 [0-9]+([eE][+-]?[0-9])?
 STRING               \".*\"
 BOOL                (true|false)
 
-
-IMPORT import
-FUN fun
 CONST const
 INTTYPE int
 STRINGTYPE str
@@ -77,37 +75,35 @@ ID                  [A-Za-z_][A-Za-z0-9_]*
 
 %%
 
-{IMPORT} {
-    yysuccess("LOOP");
-    return IMPORT;
-}
-{FUN} {
-    yysuccess("FUN");
-    return FUN;
-}
 {CONST} {
     yysuccess("CONST");
+    yylval.isConstant = true;
     return CONST;
 }
 {INTTYPE} {
     yysuccess("INT TYPE");
+    yylval.type = TYPE_INTEGER;
     return INTTYPE;
 }
 {STRINGTYPE} {
     yysuccess("STRING TYPE");
+    yylval.type = TYPE_STRING;
     return STRINGTYPE;
 }
 {FLOATTYPE} {
     yysuccess("FLOAT TYPE");
+    yylval.type = TYPE_FLOAT;
     return FLOATTYPE;
 }
 {BOOLTYPE} {
     yysuccess("BOOLEAN TYPE");
+    yylval.type = TYPE_BOOLEAN;
     return BOOLTYPE;
 }
 {LIST} {
-    yysuccess("LIST");
-    return LIST;
+    // we dont know about you yet okay ?
+    // yysuccess("LIST");
+    // return LIST;
 }
 {TYPE} {
     yysuccess("TYPE");
@@ -141,18 +137,27 @@ ID                  [A-Za-z_][A-Za-z0-9_]*
 
 {FLOAT}  {
     yysuccess("FLOAT");
+    yylval.floatValue = strtod(yytext, NULL);
     return FLOAT;
 }
 {INT}    {
     yysuccess("INT");
+    yylval.integerValue = atoi(yytext);
     return INT;
 }
+
 {BOOL}    {
     yysuccess("BOOLEAN");
+    if(!strcmp(yytext, "true")){
+        yylval.booleanValue = true;
+    }else{
+        yylval.booleanValue = false;
+    }
     return BOOL;
 }
 {STRING}  {
     yysuccess("STRING");
+    strcpy(yylval.stringValue, yytext);
     return STRING;
 }
 
@@ -291,8 +296,9 @@ ID                  [A-Za-z_][A-Za-z0-9_]*
     return OR;
 }
 
-{ID}     {
+{ID} {
     yysuccess("ID");
+    strcpy(yylval.identifier, yytext);
     return ID;
 }
 
