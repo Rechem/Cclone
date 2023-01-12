@@ -7,7 +7,14 @@ struct expression{
     int integerValue;
     double floatValue;
     bool booleanValue;
-    };
+};
+
+typedef struct tableau tableau;
+struct tableau{
+    int type;
+    int length;
+    char tabValeur[128][32];
+};
 
 
 void valeurToString(expression * expression, char * valeur);

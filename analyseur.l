@@ -102,8 +102,8 @@ ID                  [A-Za-z_][A-Za-z0-9_]*
 }
 {LIST} {
     // we dont know about you yet okay ?
-    // yysuccess("LIST");
-    // return LIST;
+    yysuccess("LIST");
+    return LIST;
 }
 {TYPE} {
     yysuccess("TYPE");

@@ -1,6 +1,7 @@
 %define parse.error verbose
 
 %{
+#define simpleToArrayOffset 4
 #define YYDEBUG 1
 %}
 
@@ -13,7 +14,6 @@
 #include <math.h>
 #include "semantic.h"
 #include "tableSymboles.h"
-
 }
 
 %union{
@@ -26,6 +26,7 @@
     char stringValue[255];
     symbole * symbole;
     expression expression;
+    tableau tableau;
 }
 
 // les terminaux only
@@ -91,6 +92,8 @@
 %type <expression> Expression;
 %type <symbole> Declaration;
 %type <type> SimpleType;
+%type <tableau> Tableau;
+%type <tableau> ComaLoopExpression;
 
 %left COMA OR AND NEG
 
@@ -116,8 +119,6 @@ int currentColumn = 1;
 
 symbole * tableSymboles = NULL;
 
-bool constFlag = false;
-
 void yysuccess(char *s);
 void yyerror(const char *s);
 void showLexicalError();
@@ -129,47 +130,43 @@ Bloc: %empty
     ;
 
 SimpleType:
-    INTTYPE { $$ = TYPE_INTEGER;}
+    INTTYPE { $$ = TYPE_INTEGER; }
     | FLOATTYPE { $$ = TYPE_FLOAT; }
     | STRINGTYPE { $$ = TYPE_STRING; }
     | BOOLTYPE { $$ = TYPE_BOOLEAN; }
 
 Expression:
-    // PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE
-    // | NEG Expression
-    // | SUB Expression
-    // | ADD Expression
-    // | Expression OperateurBinaire Expression
-    // | Variable
     INT { $$.type = TYPE_INTEGER; $$.integerValue = $1; }
     | FLOAT { $$.type = TYPE_FLOAT; $$.floatValue = $1; }
     | STRING { $$.type = TYPE_STRING; strcpy($$.stringValue, $1); }
     | BOOL { $$.type = TYPE_BOOLEAN; $$.booleanValue = $1; }
-
-OperateurBinaire:
-    EQUALS
-    | ADD
-    | SUB
-    | MUL
-    | MOD
-    | DIV
-    | POW
-    | ADDEQUALS
-    | SUBEQUALS
-    | MULEQUALS
-    | DIVEQUALS
-    | MODEQUALS
-    | LESS
-    | LESSEQUALS
-    | GREATER
-    | GREATEREQUALS
-    | DOUBLEEQUALS
-    | AND
-    | OR
+    // | Variable
+    // | PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE
+    // | NEG Expression
+    // | SUB Expression
+    // | ADD Expression
+    // | Expression EQUALS Expression
+    // | Expression ADD Expression
+    // | Expression SUB Expression
+    // | Expression MUL Expression
+    // | Expression MOD Expression
+    // | Expression DIV Expression
+    // | Expression POW Expression
+    // | Expression ADDEQUALS Expression
+    // | Expression SUBEQUALS Expression
+    // | Expression MULEQUALS Expression
+    // | Expression DIVEQUALS Expression
+    // | Expression MODEQUALS Expression
+    // | Expression LESS Expression
+    // | Expression LESSEQUALS Expression
+    // | Expression GREATER Expression
+    // | Expression GREATEREQUALS Expression
+    // | Expression DOUBLEEQUALS Expression
+    // | Expression AND Expression
+    // | Expression OR Expression
     
 DeclarationInitialisation:
     Declaration EQUALS Expression {
-        // TODO MAKE A STRUCT FOR EXPRESSION TYPE AND DECLARATION 
         if($1 != NULL){
             if($1->type == $3.type){
                 char valeurString[255];
@@ -179,14 +176,12 @@ DeclarationInitialisation:
                 printf("Type mismatch\n");
             }
         }
-    }  
-    |CONST {constFlag = true;} Declaration EQUALS Expression {
-        // TODO MAKE A STRUCT FOR EXPRESSION TYPE AND DECLARATION 
-        if($3 != NULL){
-            if($3->type == $5.type){
-                char valeurString[255];
-                valeurToString(&$5, valeurString);
-                setValeur($3, valeurString);
+    }
+    |Declaration EQUALS Tableau {
+        if($1 != NULL && $3.type >= simpleToArrayOffset){
+            if( $1->type == $3.type){
+                printf("Type match\n");
+                setTabValeur($1, $3.tabValeur, $3.length);
             }else{
                 printf("Type mismatch\n");
             }
@@ -217,6 +212,18 @@ Declaration:
             $$ = NULL;
         }
     }
+    |LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT ID {
+        if(rechercherSymbole(tableSymboles, $6) == NULL){
+            // Si l'ID n'existe pas alors l'inserer
+            symbole * nouveauSymbole = creerSymbole($6, $2 + simpleToArrayOffset, false);
+            insererSymbole(&tableSymboles, nouveauSymbole);
+            $$ = nouveauSymbole;
+        }else{
+            printf("Identifiant deja declare : %s\n", $6);
+            $$ = NULL;
+        }
+    }
+    |CONST LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT ID {}
     ;
     
 Affectation:
@@ -262,8 +269,71 @@ Boucle:
     | For
     ;
 
+Tableau: 
+    ACCOLADEOUVRANTE Expression ACCOLADEFERMANTE {
+        $$.type = $2.type + simpleToArrayOffset;
+    
+        char valeurString[255];
+        valeurToString(&$2, valeurString);
+        strcpy($$.tabValeur[0], valeurString);
+        $$.length = 1;
+    }
+    | ACCOLADEOUVRANTE Expression ComaLoopExpression ACCOLADEFERMANTE {
+        if($2.type == $3.type){
+            
+            // type of tableau is type of its content + simpleToArrayOffset
+            $$.type = $2.type + simpleToArrayOffset;
+            
+            for(int i=0;i<$3.length;i++){
+            strcpy($$.tabValeur[i], $3.tabValeur[i]);};
+
+            printf("lololol\n\n\n");
+
+            $$.length = $3.length;
+
+            char valeurString[255];
+            valeurToString(&$2, valeurString);
+
+            strcpy($$.tabValeur[$$.length], valeurString);
+            $$.length += 1;
+        } else {
+            $$.type = -1;
+            printf("Le tableau doit contenir un seul type de donnees\n");
+        }
+    }
+    ;
+
+ComaLoopExpression:
+    COMA Expression {
+        $$.type = $2.type;
+        char valeurString[255];
+        valeurToString(&$2, valeurString);
+        strcpy($$.tabValeur[0], valeurString);
+        $$.length = 1;
+    }
+    |COMA Expression ComaLoopExpression {
+        if($2.type == $3.type){
+            $$.type= $2.type;
+
+            for(int i=0;i<$3.length;i++){
+            strcpy($$.tabValeur[i], $3.tabValeur[i]);};
+
+            $$.length = $3.length;
+
+            char valeurString[255];
+            valeurToString(&$2, valeurString);
+
+            strcpy($$.tabValeur[$$.length], valeurString);
+            $$.length += 1;
+        }else{
+            $$.type = -1;
+        }
+    }
+    ;
+
 Variable:
-    ID {  }
+    ID { /* rechercher le symbole et l'affecter a $$*/ }
+    |ID CROCHETOUVRANT Expression CROCHETFERMANT {}
     ;
 
 %%
@@ -279,14 +349,14 @@ void yyerror(const char *s) {
 
 int main (void)
 {
-    // yydebug = 1;
+    yydebug = 1;
     yyin=fopen(file, "r");
     if(yyin==NULL){
         printf("erreur dans l'ouverture du fichier");
         return 1;
     }
     yyparse();  
-
+    printf("now printing\n");
     afficherTableSymboles(tableSymboles);
     if(tableSymboles != NULL){
         free(tableSymboles);

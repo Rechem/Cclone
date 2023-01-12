@@ -4,21 +4,30 @@
 #define TYPE_INTEGER 1
 #define TYPE_FLOAT 2
 #define TYPE_STRING 3
-// #define TYPE_ARRAY_BOOLEAN 4
-// #define TYPE_ARRAY_INTEGER 5
-// #define TYPE_ARRAY_FLOAT 6
-// #define TYPE_ARRAY_STRING 7
+#define TYPE_ARRAY_BOOLEAN 4
+#define TYPE_ARRAY_INTEGER 5
+#define TYPE_ARRAY_FLOAT 6
+#define TYPE_ARRAY_STRING 7
+
+#define ROWS 128
+#define COLS 32
 
 //not sure if we wanna support arrays
+typedef struct arraySubSymbol arraySubSymbol;
+struct arraySubSymbol{
+    char tabValeur[ROWS][COLS];
+    int length;
+};
 
 typedef struct symbole symbole;
 struct symbole{
-    char nom[255];
+    char nom[COLS];
     int type;
-    char valeur[255];
+    char valeur[COLS];
     bool isConstant;
-    struct symbole *suivant;
-    // char tabValeur[1024][255];
+    bool hasBeenInitialized;
+    arraySubSymbol * array;
+    symbole *suivant;
 };
 
 //machine abstraite
@@ -44,3 +53,7 @@ int getType(symbole * symbole);
 void getTypeChar(symbole * symbole, char * type);
 
 void setValeur(symbole * symbole, char * valeur);
+
+void setTabValeur(symbole * symbole, char tabValeur[ROWS][COLS], int length);
+
+void getArrayElement(symbole * symbole, int index, char * valeur);
