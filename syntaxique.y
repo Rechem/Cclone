@@ -140,30 +140,30 @@ Expression:
     | FLOAT { $$.type = TYPE_FLOAT; $$.floatValue = $1; }
     | STRING { $$.type = TYPE_STRING; strcpy($$.stringValue, $1); }
     | BOOL { $$.type = TYPE_BOOLEAN; $$.booleanValue = $1; }
-    // | Variable
-    // | PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE
-    // | NEG Expression
-    // | SUB Expression
-    // | ADD Expression
-    // | Expression EQUALS Expression
-    // | Expression ADD Expression
-    // | Expression SUB Expression
-    // | Expression MUL Expression
-    // | Expression MOD Expression
-    // | Expression DIV Expression
-    // | Expression POW Expression
-    // | Expression ADDEQUALS Expression
-    // | Expression SUBEQUALS Expression
-    // | Expression MULEQUALS Expression
-    // | Expression DIVEQUALS Expression
-    // | Expression MODEQUALS Expression
-    // | Expression LESS Expression
-    // | Expression LESSEQUALS Expression
-    // | Expression GREATER Expression
-    // | Expression GREATEREQUALS Expression
-    // | Expression DOUBLEEQUALS Expression
-    // | Expression AND Expression
-    // | Expression OR Expression
+    | Variable
+    | PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE
+    | NEG Expression
+    | SUB Expression
+    | ADD Expression
+    | Expression EQUALS Expression
+    | Expression ADD Expression
+    | Expression SUB Expression
+    | Expression MUL Expression
+    | Expression MOD Expression
+    | Expression DIV Expression
+    | Expression POW Expression
+    | Expression ADDEQUALS Expression
+    | Expression SUBEQUALS Expression
+    | Expression MULEQUALS Expression
+    | Expression DIVEQUALS Expression
+    | Expression MODEQUALS Expression
+    | Expression LESS Expression
+    | Expression LESSEQUALS Expression
+    | Expression GREATER Expression
+    | Expression GREATEREQUALS Expression
+    | Expression DOUBLEEQUALS Expression
+    | Expression AND Expression
+    | Expression OR Expression
     
 DeclarationInitialisation:
     Declaration EQUALS Expression {
@@ -223,7 +223,17 @@ Declaration:
             $$ = NULL;
         }
     }
-    |CONST LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT ID {}
+    |CONST LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT ID {
+        if(rechercherSymbole(tableSymboles, $6) == NULL){
+            // Si l'ID n'existe pas alors l'inserer
+            symbole * nouveauSymbole = creerSymbole($6, $2 + simpleToArrayOffset, true);
+            insererSymbole(&tableSymboles, nouveauSymbole);
+            $$ = nouveauSymbole;
+        }else{
+            printf("Identifiant deja declare : %s\n", $6);
+            $$ = NULL;
+        }
+    }
     ;
     
 Affectation:
@@ -332,8 +342,8 @@ ComaLoopExpression:
     ;
 
 Variable:
-    ID { /* rechercher le symbole et l'affecter a $$*/ }
-    |ID CROCHETOUVRANT Expression CROCHETFERMANT {}
+    ID
+    |ID CROCHETOUVRANT Expression CROCHETFERMANT
     ;
 
 %%
