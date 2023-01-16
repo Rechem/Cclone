@@ -237,14 +237,251 @@ Declaration:
     ;
     
 Affectation:
-    Variable EQUALS Expression { /*here we need to fetch the symbole first*/ }
-    | Variable INC
-    | Variable DEC
-    | Variable ADDEQUALS Expression
-    | Variable SUBEQUALS Expression
-    | Variable MULEQUALS Expression
-    | Variable DIVEQUALS Expression
-    | Variable MODEQUALS Expression
+    Variable EQUALS Expression { 
+        if(rechercherSymbole(tableSymboles,$1) != NULL){
+            if($1->type != $3.type ){
+                printf("Erreur sémantique : types non compatibles");
+            }
+            else{
+                char valeurString[255];
+                getValeur($1,valeurString);
+                char valeurExpression[255];
+                valeurToString($3,valeurExpression);
+                if(strcmp(valeurString,valeurExpression) == 0){
+                    return true;
+                }
+                else{
+                    return false;
+                }
+
+            }
+            
+
+        }
+        else{
+            printf("Variable non déclarée");
+        }
+    }
+        
+    | Variable INC{
+        if(rechercherSymbole(tableSymboles,$1) != NULL){
+            if($3->type != TYPE_FLOAT && $3->type != TYPE_INTEGER){
+                printf("Erreur sémantique : cette variable n'est pas de type entier ou réel");
+            }
+            else{
+                char valeurString[255];
+                getValeur($1,valeurString);
+                if($3->type == TYPE_INTEGER){
+                    int valeur = atoi(valeurString);
+                    valeur++;
+                    sprintf(valeurString, "%d", valeur);
+                    setValeur($1,valeurString);
+                }
+                else{
+                    double valeur = atof(valeurString);
+                    valeur++;
+                    sprintf(valeurString,"%.4f",valeur);
+                    setValeur($1,valeurString);
+                }
+
+            }
+            
+
+        }
+        else{
+            printf("Variable non déclarée");
+        }
+    }
+    | Variable DEC{
+        if(rechercherSymbole(tableSymboles,$1) != NULL){
+            if($3->type != TYPE_FLOAT && $3->type != TYPE_INTEGER){
+                printf("Erreur sémantique : cette variable n'est pas de type entier ou réel");
+            }
+            else{
+                char valeurString[255];
+                getValeur($1,valeurString);
+                if($3->type == TYPE_INTEGER){
+                    int valeur = atoi(valeurString);
+                    valeur--;
+                    sprintf(valeurString, "%d", valeur);
+                    setValeur($1,valeurString);
+                }
+                else{
+                    double valeur = atof(valeurString);
+                    valeur--;
+                    sprintf(valeurString,"%.4f",valeur);
+                    setValeur($1,valeurString);
+                }
+
+            }          
+
+        }
+        else{
+            printf("Variable non déclarée");
+        }
+    }     
+    | Variable ADDEQUALS Expression{
+        if(rechercherSymbole(tableSymboles,$1) != NULL){
+            if(($1->type == TYPE_FLOAT && $3.type == TYPE_FLOAT) || ($1->type == TYPE_INTEGER && $3.type == TYPE_INTEGER)){
+                char valeurString[255];
+                getValeur($1,valeurString);
+                if($1->type == TYPE_FLOAT){
+                    double valeurExpression = $3.floatValue;
+                    double valeur = atof(valeurString);
+                    double result = valeur + valeurExpression;
+                    sprintf(valeurString,"%.4f",result);
+
+                }
+                else{
+                    int valeurExpression = $3.integerValue;
+                    int valeur = atoi(valeurString);
+                    int result = valeur + valeurExpression;
+                    sprintf(valeurString, "%d", result);
+
+                }
+                setValeur($1,valeurString);
+
+            }
+            else{
+                printf("Erreur sémantique : types non compatibles");
+            }
+            
+
+        }
+        else{
+            printf("Variable non déclarée");
+        }
+    }      
+    | Variable SUBEQUALS Expression{
+        if(rechercherSymbole(tableSymboles,$1) != NULL){
+            if(($1->type == TYPE_FLOAT && $3.type == TYPE_FLOAT) || ($1->type == TYPE_INTEGER && $3.type == TYPE_INTEGER)){
+                char valeurString[255];
+                getValeur($1,valeurString);
+                if($1->type == TYPE_FLOAT){
+                    double valeurExpression = $3.floatValue;
+                    double valeur = atof(valeurString);
+                    double result = valeur - valeurExpression;
+                    sprintf(valeurString,"%.4f",result);
+
+                }
+                else{
+                    int valeurExpression = $3.integerValue;
+                    int valeur = atoi(valeurString);
+                    int result = valeur - valeurExpression;
+                    sprintf(valeurString, "%d", result);
+
+                }
+                setValeur($1,valeurString);
+
+            }
+            else{
+                printf("Erreur sémantique : types non compatibles");
+            }
+            
+
+        }
+        else{
+            printf("Variable non déclarée");
+        }
+    }
+    | Variable MULEQUALS Expression{
+        if(rechercherSymbole(tableSymboles,$1) != NULL){
+            if(($1->type == TYPE_FLOAT && $3.type == TYPE_FLOAT) || ($1->type == TYPE_INTEGER && $3.type == TYPE_INTEGER)){
+                char valeurString[255];
+                getValeur($1,valeurString);
+                if($1->type == TYPE_FLOAT){
+                    double valeurExpression = $3.floatValue;
+                    double valeur = atof(valeurString);
+                    double result = valeur * valeurExpression;
+                    sprintf(valeurString,"%.4f",result);
+
+                }
+                else{
+                    int valeurExpression = $3.integerValue;
+                    int valeur = atoi(valeurString);
+                    int result = valeur * valeurExpression;
+                    sprintf(valeurString, "%d", result);
+
+                }
+                setValeur($1,valeurString);
+
+            }
+            else{
+                printf("Erreur sémantique : types non compatibles");
+            }
+            
+
+        }
+        else{
+            printf("Variable non déclarée");
+        }
+    }
+    | Variable DIVEQUALS Expression{
+        if(rechercherSymbole(tableSymboles,$1) != NULL){
+            if(($1->type == TYPE_FLOAT && $3.type == TYPE_FLOAT) || ($1->type == TYPE_INTEGER && $3.type == TYPE_INTEGER)){
+                char valeurString[255];
+                getValeur($1,valeurString);
+                if($1->type == TYPE_FLOAT){
+                    double valeurExpression = $3.floatValue;
+                    double valeur = atof(valeurString);
+                    double result = valeur / valeurExpression;
+                    sprintf(valeurString,"%.4f",result);
+
+                }
+                else{
+                    int valeurExpression = $3.integerValue;
+                    int valeur = atoi(valeurString);
+                    int result = valeur / valeurExpression;
+                    sprintf(valeurString, "%d", result);
+                    //C'est ça donne un réel comment traiter ?
+
+                }
+                setValeur($1,valeurString);
+
+            }
+            else{
+                printf("Erreur sémantique : types non compatibles");
+            }
+            
+
+        }
+        else{
+            printf("Variable non déclarée");
+        }
+    }
+    | Variable MODEQUALS Expression{
+        if(rechercherSymbole(tableSymboles,$1) != NULL){
+            if(($1->type == TYPE_FLOAT && $3.type == TYPE_FLOAT) || ($1->type == TYPE_INTEGER && $3.type == TYPE_INTEGER)){
+                char valeurString[255];
+                getValeur($1,valeurString);
+                if($1->type == TYPE_FLOAT){
+                    double valeurExpression = $3.floatValue;
+                    double valeur = atof(valeurString);
+                    double result = valeur % valeurExpression;
+                    sprintf(valeurString,"%.4f",result);
+
+                }
+                else{
+                    int valeurExpression = $3.integerValue;
+                    int valeur = atoi(valeurString);
+                    int result = valeur % valeurExpression;
+                    sprintf(valeurString, "%d", result);
+                    //C'est ça donne un réel comment traiter ?
+
+                }
+                setValeur($1,valeurString);
+
+            }
+            else{
+                printf("Erreur sémantique : types non compatibles");
+            }
+            
+
+        }
+        else{
+            printf("Variable non déclarée");
+        }
+    }
     ;
     
 Statement:
