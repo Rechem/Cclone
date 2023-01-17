@@ -1,21 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-// la structure QUAD (qui contienne les quadreplets) sera implémentée comme 
-// liste lineare chainée de chaines de caractères
-typedef struct 
-{   
-    char operateur[30];
-	char operande1[30];
-	char operande2[30];   
-	char resultat[30];   
-	int qc;    //it's named qc par convontion
-    struct quadreplet *suivant; // suivant pour liste lineare chainée
-}quadreplet;
-typedef quadreplet* quad;
-
-// machine abstraite 
+#include "quadruplets.h"
 
 quad creerQuadreplet(char opr[30],char op1[30],char op2[30],char res[30],int num){
     quad q = malloc(sizeof(quadreplet));

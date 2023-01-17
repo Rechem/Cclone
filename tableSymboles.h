@@ -36,7 +36,7 @@ symbole * _allouerSymbole();
 
 void _mapTypeIntToChar(int type, char * typeChar);
 
-symbole * creerSymbole(char * nom, int type, bool isConstant);
+symbole * creerSymbole(char * nom, int type, bool isConstant, int length);
 
 void insererSymbole(symbole ** tableSymboles, symbole * nouveauSymbole);
 
@@ -57,3 +57,5 @@ void setValeur(symbole * symbole, char * valeur);
 void setTabValeur(symbole * symbole, char tabValeur[ROWS][COLS], int length);
 
 void getArrayElement(symbole * symbole, int index, char * valeur);
+
+void setArrayElement(symbole * symbole, int index, char * valeur);
