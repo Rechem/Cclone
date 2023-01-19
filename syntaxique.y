@@ -193,29 +193,640 @@ Expression:
             }
         }
     }
-    // | PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE
-    // | NEG Expression
-    // | SUB Expression
-    // | ADD Expression
-    // | Expression EQUALS Expression
-    // | Expression ADD Expression
-    // | Expression SUB Expression
-    // | Expression MUL Expression
-    // | Expression MOD Expression
-    // | Expression DIV Expression
-    // | Expression POW Expression
-    // | Expression ADDEQUALS Expression
-    // | Expression SUBEQUALS Expression
-    // | Expression MULEQUALS Expression
-    // | Expression DIVEQUALS Expression
-    // | Expression MODEQUALS Expression
-    // | Expression LESS Expression
-    // | Expression LESSEQUALS Expression
-    // | Expression GREATER Expression
-    // | Expression GREATEREQUALS Expression
-    // | Expression DOUBLEEQUALS Expression
-    // | Expression AND Expression
-    // | Expression OR Expression
+    | PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE {
+            $$=$2;
+    }
+    | NEG Expression {
+            if($2.type == TYPE_BOOLEAN)
+            {
+                $$.type=TYPE_BOOLEAN;
+                $$.booleanValue=!$2.booleanValue;
+            }
+            else
+            {
+                printf("Cannot find negatif of non boolean expression !\n");
+            }
+    }
+    | SUB Expression {
+            if($2.type != TYPE_STRING)
+            {
+                if($2.type == TYPE_INTEGER)
+                {
+                    $$.type=TYPE_INTEGER;
+                    $$.integerValue=0-$2.integerValue;
+                }
+                else
+                {
+                    if($2.type == TYPE_FLOAT)
+                    {
+                        $$.type=TYPE_FLOAT;
+                        $$.floatValue=0.0-$2.floatValue;
+                    }
+                }
+            }
+            else{
+                printf("Cannot get negative of non numeric expression ! \n");
+            }
+    }
+    | ADD Expression {
+            if($2.type != TYPE_STRING)
+            {
+                if($2.type == TYPE_INTEGER)
+                {
+                    $$.type=TYPE_INTEGER;
+                    $$.integerValue=0+$2.integerValue;
+                }
+                else
+                {
+                    if($2.type == TYPE_FLOAT)
+                    {
+                        $$.type=TYPE_FLOAT;
+                        $$.floatValue=0.0+$2.floatValue;
+                    }
+                }
+            }
+            else{
+                printf("Cannot get negative of non numeric expression ! \n");
+            }
+    }
+    | Expression ADD Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    printf("%d\n",$1.type);
+                    if($1.type == TYPE_STRING)
+                    {
+                        strcpy($$.stringValue,$1.stringValue);
+                        strcat($$.stringValue,$3.stringValue);
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $$.integerValue=$1.integerValue+$3.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $$.floatValue=$1.floatValue+$3.floatValue;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression SUB Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $$.integerValue=$1.integerValue-$3.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $$.floatValue=$1.floatValue-$3.floatValue;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression MUL Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $$.integerValue=$1.integerValue * $3.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $$.floatValue=$1.floatValue * $3.floatValue;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression MOD Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
+                    {
+                        printf("Division on zero\n");
+                    }
+                    else
+                    {
+                        if($$.type == TYPE_STRING)
+                        {
+                            printf("Type mismatch\n");
+                        }
+                        else{
+                            if($$.type == TYPE_INTEGER)
+                            {
+                                $$.integerValue=$1.integerValue % $3.integerValue;
+                            }
+                            else {
+                                if($$.type == TYPE_FLOAT)
+                                {
+                                    $$.floatValue=fmod($1.floatValue,$3.floatValue);
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression DIV Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
+                    {
+                        printf("Division on zero\n");
+                    }
+                    else
+                    {
+                        if($$.type == TYPE_STRING)
+                        {
+                            printf("Type mismatch\n");
+                        }
+                        else{
+                            if($$.type == TYPE_INTEGER)
+                            {
+                                $$.integerValue=$1.integerValue / $3.integerValue;
+                            }
+                            else {
+                                if($$.type == TYPE_FLOAT)
+                                {
+                                    $$.floatValue=$1.floatValue / $3.floatValue;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression POW Expression {
+            if(($1.type == $3.type) && ($$.type == $1.type)){
+                if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $$.integerValue=pow($1.integerValue,$3.integerValue);
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $$.floatValue=pow($1.floatValue,$3.floatValue);
+                            }
+                        }
+                    }
+            }
+            else{
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression ADDEQUALS Expression {
+            if(($1.type == $3.type) && ($$.type == $1.type)){
+                if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $1.integerValue=$1.integerValue + $3.integerValue;
+                            $$.integerValue=$1.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $1.floatValue=$1.floatValue + $3.floatValue;
+                                $$.floatValue=$1.floatValue;
+                            }
+                        }
+                    }
+            }
+            else{
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression SUBEQUALS Expression {
+            if(($1.type == $3.type) && ($$.type == $1.type)){
+                if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $1.integerValue=$1.integerValue - $3.integerValue;
+                            $$.integerValue=$1.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $1.floatValue=$1.floatValue - $3.floatValue;
+                                $$.floatValue=$1.floatValue;
+                            }
+                        }
+                    }
+            }
+            else{
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression MULEQUALS Expression {
+            if(($1.type == $3.type) && ($$.type == $1.type)){
+                if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $1.integerValue=$1.integerValue * $3.integerValue;
+                            $$.integerValue=$1.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $1.floatValue=$1.floatValue * $3.floatValue;
+                                $$.floatValue=$1.floatValue;
+                            }
+                        }
+                    }
+            }
+            else{
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression DIVEQUALS Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
+                    {
+                        printf("Division on zero\n");
+                    }
+                    else
+                    {
+                        if($$.type == TYPE_STRING)
+                        {
+                            printf("Type mismatch\n");
+                        }
+                        else{
+                            if($$.type == TYPE_INTEGER)
+                            {
+                                $1.integerValue=$1.integerValue / $3.integerValue;
+                                $$.integerValue=$1.integerValue;
+                            }
+                            else {
+                                if($$.type == TYPE_FLOAT)
+                                {
+                                    $1.floatValue=$1.floatValue / $3.floatValue;
+                                    $$.floatValue=$1.floatValue;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression MODEQUALS Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
+                    {
+                        printf("Division on zero\n");
+                    }
+                    else
+                    {
+                        if($$.type == TYPE_STRING)
+                        {
+                            printf("Type mismatch\n");
+                        }
+                        else{
+                            if($$.type == TYPE_INTEGER)
+                            {
+                                $1.integerValue=$1.integerValue % $3.integerValue;
+                                $$.integerValue=$1.integerValue;
+                            }
+                            else {
+                                if($$.type == TYPE_FLOAT)
+                                {
+                                    $1.floatValue=fmod($1.floatValue,$3.floatValue);
+                                    $$.floatValue=$1.floatValue;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression LESS Expression {
+            if($1.type == $3.type){
+                
+                    $$.type=TYPE_BOOLEAN;
+                        if($1.type == TYPE_STRING)
+                        {
+                            if(strcmp($1.stringValue,$3.stringValue)< 0)
+                            {
+                                $$.booleanValue=true;
+                            }
+                            else{
+                                $$.booleanValue=false;
+                            }
+                        }
+                        else{
+                            if($1.type == TYPE_INTEGER)
+                            {
+                                if($1.integerValue < $3.integerValue)
+                                {
+                                    $$.booleanValue=true;
+                                }
+                                else{
+                                    $$.booleanValue=false;
+                                }
+                            }
+                            else {
+                                if($1.type == TYPE_FLOAT)
+                                {
+                                    if($1.floatValue < $3.floatValue)
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else{
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }   
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression LESSEQUALS Expression {
+            if($1.type == $3.type){
+                        $$.type=TYPE_BOOLEAN;
+                        if($1.type == TYPE_STRING)
+                        {
+                            if(strcmp($1.stringValue,$3.stringValue)<= 0)
+                            {
+                                $$.booleanValue=true;
+                            }
+                            else{
+                                $$.booleanValue=false;
+                            }
+                        }
+                        else{
+                            if($1.type == TYPE_INTEGER)
+                            {
+                                if($1.integerValue <= $3.integerValue)
+                                {
+                                    $$.booleanValue=true;
+                                }
+                                else{
+                                    $$.booleanValue=false;
+                                }
+                            }
+                            else {
+                                if($1.type == TYPE_FLOAT)
+                                {
+                                    if($1.floatValue <= $3.floatValue)
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else{
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }   
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression GREATER Expression {
+            if($1.type == $3.type){
+                $$.type=TYPE_BOOLEAN;
+                        if($1.type == TYPE_STRING)
+                        {
+                            if(strcmp($1.stringValue,$3.stringValue)> 0)
+                            {
+                                $$.booleanValue=true;
+                            }
+                            else{
+                                $$.booleanValue=false;
+                            }
+                        }
+                        else{
+                            if($1.type == TYPE_INTEGER)
+                            {
+                                if($1.integerValue > $3.integerValue)
+                                {
+                                    $$.booleanValue=true;
+                                    printf("%d\n",$$.booleanValue);
+                                }
+                                else{
+                                    $$.booleanValue=false;
+                                }
+                            }
+                            else {
+                                if($1.type == TYPE_FLOAT)
+                                {
+                                    if($1.floatValue > $3.floatValue)
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else{
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }   
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression GREATEREQUALS Expression {
+            if($1.type == $3.type){
+                $$.type=TYPE_BOOLEAN;
+                        if($1.type == TYPE_STRING)
+                        {
+                            if(strcmp($1.stringValue,$3.stringValue)>= 0)
+                            {
+                                $$.booleanValue=true;
+                            }
+                            else{
+                                $$.booleanValue=false;
+                            }
+                        }
+                        else{
+                            if($1.type == TYPE_INTEGER)
+                            {
+                                if($1.integerValue >= $3.integerValue)
+                                {
+                                    $$.booleanValue=true;
+                                }
+                                else{
+                                    $$.booleanValue=false;
+                                }
+                            }
+                            else {
+                                if($1.type == TYPE_FLOAT)
+                                {
+                                    if($1.floatValue >= $3.floatValue)
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else{
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }   
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression DOUBLEEQUALS Expression {
+            if($1.type == $3.type){
+                $$.type=TYPE_BOOLEAN;
+                        if($1.type == TYPE_STRING)
+                        {
+                            if(strcmp($1.stringValue,$3.stringValue) == 0)
+                            {
+                                $$.booleanValue=true;
+                            }
+                            else{
+                                $$.booleanValue=false;
+                            }
+                        }
+                        else{
+                            if($1.type == TYPE_INTEGER)
+                            {
+                                if($1.integerValue == $3.integerValue)
+                                {
+                                    $$.booleanValue=true;
+                                }
+                                else{
+                                    $$.booleanValue=false;
+                                }
+                            }
+                            else {
+                                if($1.type == TYPE_FLOAT)
+                                {
+                                    if($1.floatValue == $3.floatValue)
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else{
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }   
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression AND Expression {
+            if($1.booleanValue && $3.booleanValue)
+            {
+                $$.booleanValue=true;
+            }
+            else{
+                $$.booleanValue=false;
+            }
+    }
+    | Expression OR Expression {
+            if($1.booleanValue || $3.booleanValue)
+            {
+                $$.booleanValue=true;
+            }
+            else{
+                $$.booleanValue=false;
+            }
+    }
+
     
 DeclarationInitialisation:
     Declaration EQUALS Expression {
