@@ -14,6 +14,8 @@
 #include <math.h>
 #include "semantic.h"
 #include "tableSymboles.h"
+#include "quadruplets.h"
+#include "pile.h"
 }
 
 %union{
@@ -120,6 +122,10 @@ char* file = "mytester.txt";
 int currentColumn = 1;
 
 symbole * tableSymboles = NULL;
+
+pile pile;
+quad * q;
+int qc = 1;
 
 void yysuccess(char *s);
 void yyerror(const char *s);
@@ -882,6 +888,7 @@ DeclarationInitialisation:
     }
     ;
 
+// NO QUAD
 Declaration:
     SimpleType ID {
         if(rechercherSymbole(tableSymboles, $2) == NULL){
@@ -914,6 +921,15 @@ Declaration:
                 symbole * nouveauSymbole = creerSymbole($6, $2 + simpleToArrayOffset, false, $4.integerValue);
                 insererSymbole(&tableSymboles, nouveauSymbole);
                 $$ = nouveauSymbole;
+
+                char buff[255];
+                strcpy(buff, $4.integerValue);
+                insererQuadreplet(q, "BOUNDS","0", buff, "", qc);
+                qc++;
+
+                strcpy(buff, $4.integerValue);
+                insererQuadreplet(q, "ADEC", $6, "", "", qc);
+                qc++;
             };
         }else{
             printf("Identifiant deja declare : %s\n", $6);
@@ -928,7 +944,16 @@ Declaration:
             }else{
                 symbole * nouveauSymbole = creerSymbole($7, $3 + simpleToArrayOffset, true, $5.integerValue);
                 insererSymbole(&tableSymboles, nouveauSymbole);
-            $$ = nouveauSymbole;
+                $$ = nouveauSymbole;
+
+                char buff[255];
+                strcpy(buff, $5.integerValue);
+                insererQuadreplet(q, "BOUNDS","0", buff, "", qc);
+                qc++;
+
+                strcpy(buff, $5.integerValue);
+                insererQuadreplet(q, "ADEC", $7, "", "", qc);
+                qc++;
             };
         }else{
             printf("Identifiant deja declare : %s\n", $7);
