@@ -871,6 +871,9 @@ DeclarationInitialisation:
                 char valeurString[255];
                 valeurToString($3, valeurString);
                 setValeur($1, valeurString);
+
+                insererQuadreplet(q, ":=", valeurString, "", $1.nom, qc);
+                qc++;
             }else{
                 printf("Type mismatch\n");
             }
@@ -881,6 +884,13 @@ DeclarationInitialisation:
             if( $1->type == $3.type){
                 printf("Type match\n");
                 setTabValeur($1, $3.tabValeur, $3.length);
+
+                for(int i = 0; i< $3.length; i++){
+                    char buff[255];
+                    sprintf(buff, "%s[%d]", $1->nom, i);
+                    insererQuadreplet(q, ":=", $3.tabValeur[i], "", "buff", qc);
+                    qc++;
+                };
             }else{
                 printf("Type mismatch\n");
             }
@@ -888,8 +898,8 @@ DeclarationInitialisation:
     }
     ;
 
-// NO QUAD
 Declaration:
+// NO QUADS
     SimpleType ID {
         if(rechercherSymbole(tableSymboles, $2) == NULL){
             // Si l'ID n'existe pas alors l'inserer
@@ -901,6 +911,7 @@ Declaration:
             $$ = NULL;
         }
     }
+    // NO QUADS
     |CONST SimpleType ID {
         if(rechercherSymbole(tableSymboles, $3) == NULL){
             // Si l'ID n'existe pas alors l'inserer
@@ -1261,8 +1272,6 @@ Statement:
     | Affectation SEMICOLUMN
     | Boucle
     | Condition
-    | BREAK SEMICOLUMN
-    | CONTINUE SEMICOLUMN
     ;
     
 Condition:
@@ -1354,7 +1363,7 @@ Variable:
             printf("Variable inconnue: %s", $1);
             $$.symbole = NULL;
         }else if(s->type >= simpleToArrayOffset){
-            printf("Mauvais referencement au tableau %s, voulez-vous dire %s[<index>]", $1, $1);
+            printf("Mauvais referencement du tableau %s, voulez-vous dire %s[<index>]", $1, $1);
             $$.symbole = NULL;
         }else{
             $$.symbole = s;
@@ -1375,9 +1384,7 @@ Variable:
                 printf("%s est une variable et non un tableau", $1);
                 $$.symbole = NULL;
             }else{
-                // symbole * arrayElement = creerSymbole("arrayEl", s->type-simpleToArrayOffset, s->isConstant, 0);
-                // arrayElement->valeur = s->array->tabValeur[$3.integerValue];
-                // arrayElement->valeur = NULL;
+                
                 $$.symbole = s;
                 $$.index = $3.integerValue;
             }
