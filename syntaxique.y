@@ -268,6 +268,21 @@ Expression:
                             {
                                 $$.floatValue=$1.floatValue+$3.floatValue;
                             }
+                            else
+                            {
+                                if($1.type == TYPE_BOOLEAN)
+                                {
+                                    $$.type=TYPE_BOOLEAN;
+                                    if(($1.booleanValue) || ($3.booleanValue))
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else
+                                    {
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -327,6 +342,21 @@ Expression:
                             if($$.type == TYPE_FLOAT)
                             {
                                 $$.floatValue=$1.floatValue * $3.floatValue;
+                            }
+                            else
+                            {
+                                if($1.type == TYPE_BOOLEAN)
+                                {
+                                    $$.type=TYPE_BOOLEAN;
+                                    if(($1.booleanValue) && ($3.booleanValue))
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else
+                                    {
+                                        $$.booleanValue=false;
+                                    }
+                                }
                             }
                         }
                     }
