@@ -126,7 +126,8 @@ symbole * tableSymboles = NULL;
 pile pile;
 quad * q;
 int qc = 1;
-
+int isForLoop = 0;
+quad * sauvAffectationFor;
 void yysuccess(char *s);
 void yyerror(const char *s);
 void showLexicalError();
@@ -1266,22 +1267,137 @@ Statement:
     ;
     
 Condition:
-    IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE ConditionELSE
+    IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE routineIf ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE ConditionELSE
     ;
-
+routineIf:{
+    // ici on est aprés la condition du if
+    if($3.type == TYPE_BOOLEAN){
+        char r[10]; // contien le resultat de l'expression de la condition
+        sprintf(r,"R%d",qc);	// this writes R to the r string
+		q = insererQuadreplet(q,"BZ","tmp","",r,qc);
+        // c'est ce qui est mis a jour au niveau
+		// du else (branchement si t est egale a 0) r="Rqc" 
+		//c'est le resultat de l'evaluation du condition
+		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet 
+		qc++;
+    }else{
+        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
+    }
+}
 ConditionELSE: %empty
     | ELSE Condition 
-    | ELSE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    | ELSE ACCOLADEOUVRANTE routinElse Bloc ACCOLADEFERMANTE routineFinElse
     ;
+routineElse:{
+    // ici c'est le debut de else
+	char adresse[10];
+	sprintf(adresse,"%d",qc);
+    int sauv = depiler(&pile);// depiler pour avoire la derniere addresse
+	// sauvgardee dans la pile et updater le branchement de IF avec l'dresse debut de else
+	q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine if
+	q = insererQuadreplet(q,"BR","temp","","",qc);
+	empiler(&pile,qc);
+    qc++;
+}
+routineFinElse:{
+	// ici on est a la fin du else
+    // on met a jour l'addresse de jump vers la fin de else 
+    char adresse[10];
+	sprintf(adresse,"%d",qc);
+    int sauv = depiler(&pile);// depiler pour avoire la derniere addresse
+	// sauvgardee dans la pile et updater le branchement de else avec l'dresse debut de fin
+	q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine else
+    qc++;
+}
 
 While:
-    WHILE PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    WHILE PARENTHESEOUVRANTE routineCondWhile Expression PARENTHESEFERMANTE  ACCOLADEOUVRANTE routineDebutWhile Bloc ACCOLADEFERMANTE routineFinWhile
     ;
+routineCondWhile : {
+    // ici on est avant la condition du while
+    empiler(&pile,qc-1); // on sauvgarde l'addresse de cette quadreplet 
+    // it think it's qc-1 car on incrémonte le qc aprés l'insertion
+}
+routineDebutWhile{
+    // ici c'est le debut de while
+    if($4.type == TYPE_BOOLEAN){ // normalemeent ça change à 4 quand on insert la routine
+        char r[10]; // contien le resultat de l'expression de la condition
+        sprintf(r,"R%d",qc);	// this writes R to the r string
+		q = insererQuadreplet(q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
+        // to finWhile
+		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
+        // quadreplet
+		qc++;
+    }else{
+        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
+    }
+}
+
+routineFinWhile : {
+    // ici c'est la fin du while
+	char adresse[10];
+   
+    // on depile deux foix pour avoire l'addresse de condition du while pour se 
+    // brancher vers la condition du while inconditionnelemnt (evaluer la condition pour la prochaine iteration)
+    int sauvAdrDebutWhile = depiler(&pile);//  c'est l'adr de debut while car c'est la derniere 
+    // qui a ete empilé
+    int sauvAdrCondWhile = depiler(&pile); // l'adr de condition
+    // on l'ecrit dans une chaine
+    sprintf(adresseCondWhile,"%d",sauvAdrCondWhile);
+    // on insert un quadreplet pour pour se brancher vers la condition du while
+    q = insererQuadreplet(q,"BR",adresseCondWhile,"","",qc);
+    qc++;
+    // updater l'adr du branchement vers la fin (le prochain bloc d'instructions) crée dans debut while
+    sprintf(adresse,"%d",qc);
+    q = updateQuadreplet(q,sauvAdrDebutWhile,adresse);
+}
 
 For: 
-    FOR PARENTHESEOUVRANTE DeclarationInitialisation SEMICOLUMN Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
+    FOR PARENTHESEOUVRANTE DeclarationInitialisation SEMICOLUMN routineCondFor Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE routineDebutFor Bloc routineFinFor ACCOLADEFERMANTE
     ;
+routineCondFor : {
+    // ici on est avant l'expression de la condition du For
+    empiler(&pile,qc-1); // on sauvgarde l'addresse de cette quadreplet 
+    // it think it's qc-1 car on incrémonte le qc aprés l'insertion
+    //pour se brancher ici a la fin de l'iteration et reevaluer la condition
+    isForLoop = 1;
+}
+routineDebutFor : {
+// ici c'est le debut du for
+    if($6.type == TYPE_BOOLEAN){ // normalemeent ça change à $6 quand on insert les routines
+        char r[10]; // contien le resultat de l'expression de la condition
+        sprintf(r,"R%d",qc);	// this writes R to the r string
+		q = insererQuadreplet(q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
+        // to finFor (le prochain bloc d'instructions)
+		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
+        // quadreplet apres avec l'adresse de finFor
+		qc++;
+    }else{
+        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
+    }
+}
+routineFinFor : {
+    // ici c'est la fin du for
+	char adresse[10];
 
+    // on ajoute le quadreplet généré dans affectation qui incrémente le compteur
+    q = ajouterQuadreplet(q,&sauvAffectationFor,qc);
+    qc++;
+   
+    // on depile deux foix pour avoir l'adresse de condition du for pour se 
+    // brancher vers la condition du for inconditionnelemnt (evaluer la condition pour la prochaine iteration)
+    int sauvAdrDebutFor = depiler(&pile);//  c'est l'adr de debut de for car c'est la derniere 
+    // qui a ete empilé
+    int sauvAdrCondFor = depiler(&pile); // l'adr de condition du For
+    // on l'ecrit dans une chaine
+    sprintf(adresseCondFor,"%d",sauvAdrCondFor);
+    // on insert un quadreplet pour pour se brancher vers la condition du For inconditionnelemnt
+    q = insererQuadreplet(q,"BR",adresseCondFor,"","",qc);
+    qc++;
+    // updater l'adr du branchement vers la fin (le prochain bloc d'instructions) crée dans debut du For
+    sprintf(adresse,"%d",qc);
+    q = updateQuadreplet(q,sauvAdrDebutFor,adresse);
+}
 Boucle:
     While
     | For
