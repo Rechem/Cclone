@@ -9,7 +9,7 @@ symbole * _allouerSymbole(){
     return pointer;
 }
 
-symbole * creerSymbole(char * nom, int type, bool isConstant){
+symbole * creerSymbole(char * nom, int type, bool isConstant, int length){
     symbole * pointer = _allouerSymbole();
     
     strcpy(pointer->nom, nom);
@@ -18,6 +18,7 @@ symbole * creerSymbole(char * nom, int type, bool isConstant){
     pointer->hasBeenInitialized = false;
     if(type >=4){
         pointer->array = (arraySubSymbol *) malloc(sizeof(arraySubSymbol));
+        pointer->array->length = length;
     }
     return pointer;
 }
@@ -45,7 +46,7 @@ void afficherTableSymboles(symbole * tableSymboles){
 
     printf("************************ TABLE DES SYMBOLES ************************\n");
     printf("--------------------------------------------------------------------\n");
-    printf("\tName\t\tType\t\tValue\t\tConstant   \n");
+    printf("\tName\t\tType\t\tConstant\tValue   \n");
 
     while(pointer != NULL){  
     printf("--------------------------------------------------------------------\n");
@@ -55,18 +56,21 @@ void afficherTableSymboles(symbole * tableSymboles){
 
         printf("\t%s", pointer->nom);
         printf("\t\t%s", type);
-        if(pointer->type >= 4 ){
-            printf("\t[");
-            if(pointer->array->length > 0)
-                printf("%s", pointer->array->tabValeur[pointer->array->length-1]);
+        printf("\t%s", pointer->isConstant ? "Oui" : "Non");
+        if(pointer->hasBeenInitialized){
+            if(pointer->type >= 4 ){
+                printf("\t\t(%d)[", pointer->array->length);
+                if(pointer->array->length > 0)
+                    printf("%s", pointer->array->tabValeur[pointer->array->length-1]);
 
-            for (int i = pointer->array->length -2; i >=0; i--){
-                printf(", %s", pointer->array->tabValeur[i]);
-            }
-            printf("]");
-        }else
-            printf("\t\t%s", pointer->valeur);
-        printf("\t\t%s\n", pointer->isConstant ? "Oui" : "Non");
+                for (int i = pointer->array->length -2; i >=0; i--){
+                    printf(", %s", pointer->array->tabValeur[i]);
+                }
+                printf("]");
+            }else
+                printf("\t\t%s", pointer->valeur);
+        }
+        printf("\n");
         pointer=pointer->suivant;
     }
 
@@ -122,16 +126,16 @@ void _mapTypeIntToChar(int type, char * typeChar){
 
     switch (type){
         case TYPE_INTEGER:
-            sprintf(typeChar, "%s", "Integer");
+            sprintf(typeChar, "%s", "Integer\t");
             break;
         case TYPE_FLOAT:
-            sprintf(typeChar, "%s", "Float");
+            sprintf(typeChar, "%s", "Float\t");
             break;
         case TYPE_STRING:
-            sprintf(typeChar, "%s", "String");
+            sprintf(typeChar, "%s", "String\t");
             break;
         case TYPE_BOOLEAN:
-            sprintf(typeChar, "%s", "Boolean");
+            sprintf(typeChar, "%s", "Boolean\t");
             break;
         case TYPE_ARRAY_BOOLEAN:
             sprintf(typeChar, "%s", "Boolean[]");
@@ -160,7 +164,6 @@ void getTypeChar(symbole * symbole, char * type){
 
 }
 
-//change it to adapt to arrays
 void setValeur(symbole * symbole, char * valeur){
 
     if(symbole == NULL){
@@ -210,5 +213,23 @@ void getArrayElement(symbole * symbole, int index, char * valeur){
         printf("No valeur type because NULL");
         return;
     }
-    strcpy(valeur, symbole->array->tabValeur[index]);
+    if(index >= symbole->array->length){
+        printf("Index out of bound");
+        strcpy(valeur, "-1");
+    }else
+        strcpy(valeur, symbole->array->tabValeur[symbole->array->length - index -1]);
+}
+
+void setArrayElement(symbole * symbole, int index, char * valeur){
+    if(symbole == NULL || symbole->type <= 3 || !symbole->hasBeenInitialized
+    || valeur== NULL || index < 0){
+        printf("No valeur type because NULL");
+        return;
+    }
+    printf("zebda %s\n\n\n\n", valeur);
+    if(index >= symbole->array->length){
+        printf("Index out of bound");
+        strcpy(valeur, "-1");
+    }else
+    strcpy(symbole->array->tabValeur[symbole->array->length - index -1], valeur);
 }

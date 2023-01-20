@@ -16,5 +16,11 @@ struct tableau{
     char tabValeur[128][32];
 };
 
+typedef struct variable variable;
+struct variable{
+    struct symbole * symbole;
+    int index;
+};
 
-void valeurToString(expression * expression, char * valeur);
+
+void valeurToString(expression expression, char * valeur);
