@@ -15,13 +15,13 @@ struct quad
 
 quad * creerQuadreplet(char opr[30],char op1[30],char op2[30],char res[30],int num);
 
-quad * insererQuadreplet(quad * p,char opr[],char op1[],char op2[],char res[],int num);
+void insererQuadreplet(quad ** p,char opr[],char op1[],char op2[],char res[],int num);
 
-quad * updateQuadreplet(quad * q, int qc,char num[30]);
+void updateQuadreplet(quad * q, int qc,char num[30]);
 
 void afficherQuad(quad * q);
 
 
 void enregistrerQuad(quad * q);
-quad * ajouterQuadreplet(quad * q,quad * nouveauQuadreplet,int num);
+void ajouterQuadreplet(quad ** q,quad * nouveauQuadreplet,int num);
 
