@@ -21,4 +21,7 @@ quad * updateQuadreplet(quad * q, int qc,char num[30]);
 
 void afficherQuad(quad * q);
 
+
 void enregistrerQuad(quad * q);
+quad * ajouterQuadreplet(quad * q,quad * nouveauQuadreplet,int num);
+

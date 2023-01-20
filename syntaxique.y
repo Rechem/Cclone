@@ -127,6 +127,9 @@ pile pile;
 quad * q;
 int qc = 1;
 
+int isForLoop = 0;
+quad * sauvAffectationFor;
+
 void yysuccess(char *s);
 void yyerror(const char *s);
 void showLexicalError();
@@ -982,6 +985,7 @@ Affectation:
                 char valeurString[255];
                 valeurToString($3,valeurString);
                 if($1.symbole->type < simpleToArrayOffset)
+
                     {
                         setValeur($1.symbole, valeurString);
 
@@ -995,6 +999,7 @@ Affectation:
                         insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
                         qc++;
                     }
+
             }
         }
 
@@ -1012,6 +1017,7 @@ Affectation:
                     char valeurString[255];
 
                     if($1.symbole->type < simpleToArrayOffset)
+
                         {
                             getValeur($1.symbole, valeurString);
 
@@ -1027,6 +1033,7 @@ Affectation:
                             qc++;
                         }
 
+
                     if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                         int valeur = atoi(valeurString);
                         valeur++;
@@ -1037,6 +1044,7 @@ Affectation:
                         sprintf(valeurString,"%.4f",valeur);
                     };
                     if($1.symbole->type < simpleToArrayOffset)
+
                         {
                             setValeur($1.symbole, valeurString);
 
@@ -1050,6 +1058,7 @@ Affectation:
                             insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
                             qc++;
                         }
+
                 }
             }
         }
@@ -1067,6 +1076,7 @@ Affectation:
                     char valeurString[255];
                     
                     if($1.symbole->type < simpleToArrayOffset)
+
                         {
                             getValeur($1.symbole, valeurString);
                             
@@ -1081,6 +1091,7 @@ Affectation:
                             qc++;
                         }
 
+
                     if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                         int valeur = atoi(valeurString);
                         valeur--;
@@ -1091,6 +1102,7 @@ Affectation:
                         sprintf(valeurString,"%.4f",valeur);
                     };
                     if($1.symbole->type < simpleToArrayOffset)
+
                         {
                             setValeur($1.symbole, valeurString);
 
@@ -1104,6 +1116,7 @@ Affectation:
                             insererQuadreplet(q, ":=", valeurString, "",$1.symbole->array->tabValeur[$1.index], qc);
                             qc++;
                         }
+
                 }
             }
         }
@@ -1119,6 +1132,7 @@ Affectation:
                     char valeurString[255];
                     
                     if($1.symbole->type < simpleToArrayOffset)
+
                         {
                             getValeur($1.symbole, valeurString);
 
@@ -1142,11 +1156,13 @@ Affectation:
                                 qc++;
                             }  
                         }
+
                     }else if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                         int valeurExpression = $3.integerValue;
                         int valeur = atoi(valeurString);
                         int result = valeur + valeurExpression;
                         sprintf(valeurString, "%d", result);
+
 
                         if($1.symbole->type < simpleToArrayOffset){
                                 insererQuadreplet(q, "+=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
@@ -1156,11 +1172,13 @@ Affectation:
                                 insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
                                 qc++;
                             } 
+
                     }else if($1.symbole->type % simpleToArrayOffset == TYPE_FLOAT){
                         double valeurExpression = $3.floatValue;
                         double valeur = atof(valeurString);
                         double result = valeur + valeurExpression;
                         sprintf(valeurString,"%.4f",result);
+
 
                          if($1.symbole->type < simpleToArrayOffset){
                                 insererQuadreplet(q, "+=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
@@ -1198,6 +1216,7 @@ Affectation:
                             insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
                             qc++;
                         }
+
                 }
             }
         }
@@ -1218,6 +1237,7 @@ Affectation:
                     char valeurString[255];
                     
                     if($1.symbole->type < simpleToArrayOffset)
+
                         {
                             getValeur($1.symbole, valeurString);
 
@@ -1229,11 +1249,13 @@ Affectation:
 
                         }
 
+
                     if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                         int valeurExpression = $3.integerValue;
                         int valeur = atoi(valeurString);
                         int result = valeur - valeurExpression;
                         sprintf(valeurString, "%d", result);
+
                          if($1.symbole->type < simpleToArrayOffset){
                                 insererQuadreplet(q, "-=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
                                 qc++;
@@ -1242,11 +1264,13 @@ Affectation:
                                 insererQuadreplet(q, "-=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
                                 qc++;
                             } 
+
                     }else{
                         double valeurExpression = $3.floatValue;
                         double valeur = atof(valeurString);
                         double result = valeur - valeurExpression;
                         sprintf(valeurString,"%.4f",result);
+
 
                          if($1.symbole->type < simpleToArrayOffset){
                                 insererQuadreplet(q, "-=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
@@ -1267,6 +1291,7 @@ Affectation:
 
                         insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
                         qc++;}
+
                     }
                 }
             }
@@ -1289,12 +1314,14 @@ Affectation:
                     char valeurString[255];
                     
                     if($1.symbole->type < simpleToArrayOffset)
+
                         {
                             getValeur($1.symbole, valeurString);
                         }
                     else{
                         getArrayElement($1.symbole, $1.index, valeurString);
                     }
+
 
                     if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                         int valeurExpression = $3.integerValue;
@@ -1310,11 +1337,13 @@ Affectation:
                                 insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
                                 qc++;
                             } 
+
                     }else if($1.symbole->type % simpleToArrayOffset == TYPE_FLOAT){
                         double valeurExpression = $3.floatValue;
                         double valeur = atof(valeurString);
                         double result = valeur * valeurExpression;
                         sprintf(valeurString,"%.4f",result);
+
 
                          if($1.symbole->type < simpleToArrayOffset){
                                 insererQuadreplet(q, "*=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
@@ -1324,6 +1353,7 @@ Affectation:
                                 insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
                                 qc++;
                             } 
+
                     }else{
                         if($3.booleanValue){
                             if($1.symbole->type < simpleToArrayOffset){
@@ -1344,10 +1374,12 @@ Affectation:
                                 insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.booleanValue, $1.symbole->array->tabValeur[$1.index], qc);
                                 qc++;
                             } 
+
                         };
                         
                     };
                     if($1.symbole->type < simpleToArrayOffset)
+
                         {setValeur($1.symbole, valeurString);
 
                         insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
@@ -1357,6 +1389,7 @@ Affectation:
 
                         insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
                         qc++;}
+
                     }
                 }
             }
@@ -1378,6 +1411,7 @@ Affectation:
                         char valeurString[255];
 
                         if($1.symbole->type < simpleToArrayOffset)
+
                             
                             {
                                 getValeur($1.symbole, valeurString);
@@ -1388,11 +1422,13 @@ Affectation:
                             
                         }
 
+
                         if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                             int valeurExpression = $3.integerValue;
                             int valeur = atoi(valeurString);
                             int result = valeur / valeurExpression;
                             sprintf(valeurString, "%d", result);
+
 
                              if($1.symbole->type < simpleToArrayOffset){
                                 insererQuadreplet(q, "/=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
@@ -1402,11 +1438,13 @@ Affectation:
                                 insererQuadreplet(q, "/=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
                                 qc++;
                             } 
+
                         }else {
                             double valeurExpression = $3.floatValue;
                             double valeur = atof(valeurString);
                             double result = valeur / valeurExpression;
                             sprintf(valeurString,"%.4f",result);
+
 
                              if($1.symbole->type < simpleToArrayOffset){
                                 insererQuadreplet(q, "/=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
@@ -1427,6 +1465,7 @@ Affectation:
 
                             insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
                             qc++;}
+
                     }
                 }
             }
@@ -1446,6 +1485,7 @@ Affectation:
 
                         char valeurString[255];
                         
+
                         if($1.symbole->type < simpleToArrayOffset){
                             getValeur($1.symbole, valeurString);
 
@@ -1454,10 +1494,12 @@ Affectation:
                             getArrayElement($1.symbole, $1.index, valeurString);
                             }
 
+
                         int valeurExpression = $3.integerValue;
                         int valeur = atoi(valeurString);
                         int result = valeur % valeurExpression;
                         sprintf(valeurString, "%d", result);
+
 
                          if($1.symbole->type < simpleToArrayOffset){
                                 insererQuadreplet(q, "%=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
@@ -1498,22 +1540,158 @@ Statement:
     ;
     
 Condition:
-    IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE ConditionELSE
+    DebutIf ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE ConditionELSE
     ;
-
-ConditionELSE: %empty
+DebutIf : 
+    IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE { // routine debut if
+    // ici on est aprés la condition du if
+    if($3.type == TYPE_BOOLEAN){
+        char r[10]; // contien le resultat de l'expression de la condition
+        sprintf(r,"R%d",qc);	// this writes R to the r string
+		q = insererQuadreplet(q,"BZ","tmp","",r,qc);
+        // c'est ce qui est mis a jour au niveau
+		// du else (branchement si t est egale a 0) r="Rqc" 
+		//c'est le resultat de l'evaluation du condition
+		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet 
+		qc++;
+    }else{
+        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
+    }
+}
+;
+ConditionELSE: %empty { // routine fin if quand y a pas du else
+        // ici on est a la fin de if et pas du else
+        // on met a jour l'addresse de jump vers la fin de if 
+        char adresse[10];
+        sprintf(adresse,"%d",qc);
+        int sauv = depiler(&pile);// depiler pour avoir la derniere adresse
+        // sauvgardee dans la pile et updater le branchement de if avec l'adresse de fin if
+        q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du la routine if
+        qc++;
+    }
     | ELSE Condition 
-    | ELSE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
-    ;
+    | DebutElse Bloc ACCOLADEFERMANTE { // routine finElse
+	// ici on est a la fin du else
+    // on met a jour l'addresse de jump vers la fin de else 
+    char adresse[10];
+	sprintf(adresse,"%d",qc);
+    int sauv = depiler(&pile);// depiler pour avoir la derniere addresse
+	// sauvgardee dans la pile et updater le branchement de else avec l'adresse debut de fin
+	q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine else
+    qc++;
+}
+;
+DebutElse : ELSE ACCOLADEOUVRANTE { // routineElse
+    // ici c'est le debut de else
+	char adresse[10];
+	sprintf(adresse,"%d",qc);
+    int sauv = depiler(&pile);// depiler pour avoire la derniere addresse
+	// sauvgardee dans la pile et updater le branchement de IF avec l'dresse debut de else
+	q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine if
+	q = insererQuadreplet(q,"BR","temp","","",qc);
+	empiler(&pile,qc);
+    qc++;
+}
+;
 
 While:
-    WHILE PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
-    ;
+    DebutWhile Bloc ACCOLADEFERMANTE { // routineFinWhile
+    // ici c'est la fin du while
+	char adresse[10];
+   
+    // on depile deux foix pour avoire l'addresse de condition du while pour se 
+    // brancher vers la condition du while inconditionnelemnt (evaluer la condition pour la prochaine iteration)
+    int sauvAdrDebutWhile = depiler(&pile);//  c'est l'adr de debut while car c'est la derniere 
+    // qui a ete empilé
+    int sauvAdrCondWhile = depiler(&pile); // l'adr de condition
+    // on l'ecrit dans une chaine
+    sprintf(adresseCondWhile,"%d",sauvAdrCondWhile);
+    // on insert un quadreplet pour pour se brancher vers la condition du while
+    q = insererQuadreplet(q,"BR",adresseCondWhile,"","",qc);
+    qc++;
+    // updater l'adr du branchement vers la fin (le prochain bloc d'instructions) crée dans debut while
+    sprintf(adresse,"%d",qc);
+    q = updateQuadreplet(q,sauvAdrDebutWhile,adresse);
+}
+;
+DebutWhile : 
+    ConditionWhile Expression PARENTHESEFERMANTE  ACCOLADEOUVRANTE { //routineDebutWhile
+    // ici c'est le debut de while
+    if($2.type == TYPE_BOOLEAN){
+        char r[10]; // contien le resultat de l'expression de la condition
+        sprintf(r,"R%d",qc);	// this writes R to the r string
+		q = insererQuadreplet(q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
+        // to finWhile
+		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
+        // quadreplet
+		qc++;
+    }else{
+        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
+    }
+}
+;
+
+ConditionWhile:
+    WHILE PARENTHESEOUVRANTE { // routineCondWhile
+    // ici on est avant la condition du while
+    empiler(&pile,qc-1); // on sauvgarde l'addresse de cette quadreplet 
+    // it think it's qc-1 car on incrémonte le qc aprés l'insertion
+}
+;
+
+
 
 For: 
-    FOR PARENTHESEOUVRANTE DeclarationInitialisation SEMICOLUMN Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE
-    ;
+    DebutFor Bloc  ACCOLADEFERMANTE  { // routineFinFor
+    // ici c'est la fin du for
+	char adresse[10];
 
+    // on ajoute le quadreplet généré dans affectation qui incrémente le compteur
+    q = ajouterQuadreplet(q,&sauvAffectationFor,qc);
+    qc++;
+   
+    // on depile deux foix pour avoir l'adresse de condition du for pour se 
+    // brancher vers la condition du for inconditionnelemnt (evaluer la condition pour la prochaine iteration)
+    int sauvAdrDebutFor = depiler(&pile);//  c'est l'adr de debut de for car c'est la derniere 
+    // qui a ete empilé
+    int sauvAdrCondFor = depiler(&pile); // l'adr de condition du For
+    // on l'ecrit dans une chaine
+    sprintf(adresseCondFor,"%d",sauvAdrCondFor);
+    // on insert un quadreplet pour pour se brancher vers la condition du For inconditionnelemnt
+    q = insererQuadreplet(q,"BR",adresseCondFor,"","",qc);
+    qc++;
+    // updater l'adr du branchement vers la fin (le prochain bloc d'instructions) crée dans debut du For
+    sprintf(adresse,"%d",qc);
+    q = updateQuadreplet(q,sauvAdrDebutFor,adresse);
+}
+;
+
+DebutFor : 
+    ConditionFor Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE  { //routineDebutFor
+// ici c'est le debut du for
+    if($2.type == TYPE_BOOLEAN){ // normalemeent ça change à $6 quand on insert les routines
+        char r[10]; // contien le resultat de l'expression de la condition
+        sprintf(r,"R%d",qc);	// this writes R to the r string
+		q = insererQuadreplet(q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
+        // to finFor (le prochain bloc d'instructions)
+		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
+        // quadreplet apres avec l'adresse de finFor
+		qc++;
+    }else{
+        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
+    }
+}
+;
+
+ConditionFor : 
+    FOR PARENTHESEOUVRANTE DeclarationInitialisation SEMICOLUMN { // routineCondFor 
+    // ici on est avant l'expression de la condition du For
+    empiler(&pile,qc-1); // on sauvgarde l'addresse de cette quadreplet 
+    // it think it's qc-1 car on incrémonte le qc aprés l'insertion
+    //pour se brancher ici a la fin de l'iteration et reevaluer la condition
+    isForLoop = 1;
+}
+;
 Boucle:
     While
     | For
