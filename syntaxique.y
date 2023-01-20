@@ -129,6 +129,7 @@ quad * q;
 int qc = 1;
 
 bool isForLoop = false;
+bool isElseIf = false;
 qFifo * quadFifo;
 
 void yysuccess(char *s);
@@ -1086,11 +1087,11 @@ Declaration:
                 $$ = nouveauSymbole;
 
                 char buff[255];
-                sprintf(buff, "%d", $4.integerValue);
+                sprintf(buff, "%d", $4.integerValue -1);
                 insererQuadreplet(&q, "BOUNDS","0", buff, "", qc);
                 qc++;
 
-                sprintf(buff, "%d", $4.integerValue);
+                sprintf(buff, "%d", $4.integerValue -1);
                 insererQuadreplet(&q, "ADEC", $6, "", "", qc);
                 qc++;
             };
@@ -1733,10 +1734,21 @@ Condition:
 DebutIf : 
     IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE { // routine debut if
     // ici on est aprés la condition du if
+
+    if(isElseIf){
+            printf("kelb\n\n\n\\n");
+            char adresse[10];
+            sprintf(adresse,"%d",qc);
+            int sauv = depiler(stack);// depiler pour avoir la derniere adresse
+            // sauvgardee dans la pile et updater le branchement de if avec l'adresse de fin if
+            updateQuadreplet(q,sauv,adresse);
+            isElseIf = false;
+        }
+
     if($3.type == TYPE_BOOLEAN){
         char r[10]; // contien le resultat de l'expression de la condition
-        sprintf(r,"R%d",qc);	// this writes R to the r string
-		insererQuadreplet(&q,"BZ","tmp","",r,qc);
+        sprintf(r,"R%d",qc -1);	// this writes R to the r string
+		insererQuadreplet(&q,"BZ","tmp", r, "",qc);
         // c'est ce qui est mis a jour au niveau
 		// du else (branchement si t est egale a 0) r="Rqc" 
 		//c'est le resultat de l'evaluation du condition
@@ -1756,7 +1768,7 @@ ConditionELSE: %empty { // routine fin if quand y a pas du else
         // sauvgardee dans la pile et updater le branchement de if avec l'adresse de fin if
         updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du la routine if
     }
-    | ELSE Condition 
+    | AvantElseIf Condition 
     | DebutElse Bloc ACCOLADEFERMANTE { // routine finElse
 	// ici on est a la fin du else
     // on met a jour l'addresse de jump vers la fin de else 
@@ -1765,21 +1777,33 @@ ConditionELSE: %empty { // routine fin if quand y a pas du else
     int sauv = depiler(stack);// depiler pour avoir la derniere addresse
 	// sauvgardee dans la pile et updater le branchement de else avec l'adresse debut de fin
 	updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine else
-    qc++;
 }
 ;
 DebutElse : ELSE ACCOLADEOUVRANTE { // routineElse
     // ici c'est le debut de else
 	char adresse[10];
-	sprintf(adresse,"%d",qc);
+	sprintf(adresse,"%d",qc + 1);
     int sauv = depiler(stack);// depiler pour avoire la derniere addresse
-	// sauvgardee dans la pile et updater le branchement de IF avec l'dresse debut de else
+    // sauvgardee dans la pile et updater le branchement de IF avec l'dresse debut de else
 	updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine if
 	insererQuadreplet(&q,"BR","temp","","",qc);
 	empiler(stack,qc);
     qc++;
 }
 ;
+
+AvantElseIf: ELSE {
+    char adresse[10];
+	sprintf(adresse,"%d",qc);
+    int sauv = depiler(stack);// depiler pour avoire la derniere addresse
+	// sauvgardee dans la pile et updater le branchement de IF avec l'dresse debut de else
+	updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine if
+
+    insererQuadreplet(&q,"BR","tmp","","",qc);
+    empiler(stack,qc);
+    qc++;
+    isElseIf = true;
+}
 
 While:
     DebutWhile Bloc ACCOLADEFERMANTE { // routineFinWhile
@@ -1847,7 +1871,7 @@ For:
     // on l'ecrit dans une chaine
     sprintf(adresseCondFor,"%d",sauvAdrCondFor);
     // on insert un quadreplet pour pour se brancher vers la condition du For inconditionnelemnt
-    insererQuadreplet(&q,"BR",adresseCondFor,"","",qc);
+    insererQuadreplet(&q,"BR",adresseCondFor, "","",qc);
     qc++;
     // updater l'adr du branchement vers la fin (le prochain bloc d'instructions) crée dans debut du For
     sprintf(adresse,"%d",qc);
@@ -1862,8 +1886,8 @@ DebutFor:
 // ici c'est le debut du for
     if($2.type == TYPE_BOOLEAN){ // normalemeent ça change à $6 quand on insert les routines
         char r[10]; // contien le resultat de l'expression de la condition
-        sprintf(r,"R%d",qc);	// this writes R to the r string
-		insererQuadreplet(&q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
+        sprintf(r,"R%d",qc -1);	// this writes R to the r string
+		insererQuadreplet(&q,"BZ","tmp",r, "",qc); // jump if condition returns false(0) 
         // to finFor (le prochain bloc d'instructions)
 		empiler(stack,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
         // quadreplet apres avec l'adresse de finFor
@@ -1998,7 +2022,7 @@ void yyerror(const char *s) {
 
 int main (void)
 {
-    yydebug = 1;
+    // yydebug = 1;
     yyin=fopen(file, "r");
     if(yyin==NULL){
         printf("erreur dans l'ouverture du fichier");
