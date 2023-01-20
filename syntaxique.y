@@ -14,6 +14,8 @@
 #include <math.h>
 #include "semantic.h"
 #include "tableSymboles.h"
+#include "quadruplets.h"
+#include "pile.h"
 }
 
 %union{
@@ -27,6 +29,7 @@
     symbole * symbole;
     expression expression;
     tableau tableau;
+    variable variable;
 }
 
 // les terminaux only
@@ -91,6 +94,7 @@
 
 %type <expression> Expression;
 %type <symbole> Declaration;
+%type <variable> Variable;
 %type <type> SimpleType;
 %type <tableau> Tableau;
 %type <tableau> ComaLoopExpression;
@@ -119,6 +123,10 @@ int currentColumn = 1;
 
 symbole * tableSymboles = NULL;
 
+pile pile;
+quad * q;
+int qc = 1;
+
 void yysuccess(char *s);
 void yyerror(const char *s);
 void showLexicalError();
@@ -140,38 +148,732 @@ Expression:
     | FLOAT { $$.type = TYPE_FLOAT; $$.floatValue = $1; }
     | STRING { $$.type = TYPE_STRING; strcpy($$.stringValue, $1); }
     | BOOL { $$.type = TYPE_BOOLEAN; $$.booleanValue = $1; }
-    | Variable
-    | PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE
-    | NEG Expression
-    | SUB Expression
-    | ADD Expression
-    | Expression EQUALS Expression
-    | Expression ADD Expression
-    | Expression SUB Expression
-    | Expression MUL Expression
-    | Expression MOD Expression
-    | Expression DIV Expression
-    | Expression POW Expression
-    | Expression ADDEQUALS Expression
-    | Expression SUBEQUALS Expression
-    | Expression MULEQUALS Expression
-    | Expression DIVEQUALS Expression
-    | Expression MODEQUALS Expression
-    | Expression LESS Expression
-    | Expression LESSEQUALS Expression
-    | Expression GREATER Expression
-    | Expression GREATEREQUALS Expression
-    | Expression DOUBLEEQUALS Expression
-    | Expression AND Expression
-    | Expression OR Expression
+    | Variable {
+        if($1.symbole != NULL){
+            char valeurString[255];
+            if($1.symbole->type < simpleToArrayOffset){
+                getValeur($1.symbole, valeurString);
+                switch ($1.symbole->type){
+                    case TYPE_INTEGER:
+                        $$.integerValue = atoi(valeurString);
+                        $$.type = TYPE_INTEGER;
+                        break;
+                    case TYPE_FLOAT:
+                        $$.integerValue = atof(valeurString);
+                        $$.type = TYPE_FLOAT;
+                        break;
+                    case TYPE_STRING:
+                        strcpy($$.stringValue, valeurString);
+                        $$.type = TYPE_STRING;
+                        break;
+                    case TYPE_BOOLEAN:
+                        $$.booleanValue = strcmp(valeurString, "true") == 0;
+                        $$.type = TYPE_BOOLEAN;
+                        break;
+                    default :
+                        $$.type = -1;
+                        break;
+                    }}else{
+                        getArrayElement($1.symbole, $1.index, valeurString);
+                        switch ($1.symbole->type){
+                            case TYPE_ARRAY_BOOLEAN:
+                                $$.booleanValue = strcmp(valeurString, "true") == 0;;
+                                $$.type = TYPE_BOOLEAN;
+                                break;
+                            case TYPE_ARRAY_FLOAT:
+                                $$.floatValue = atof(valeurString);
+                                $$.type = TYPE_FLOAT;
+                                break;
+                            case TYPE_ARRAY_INTEGER:
+                                $$.integerValue = atoi(valeurString);
+                                $$.type = TYPE_INTEGER;
+                                break;
+                            case TYPE_ARRAY_STRING:
+                                strcpy($$.stringValue, valeurString);
+                                $$.type = TYPE_STRING;
+                                break;
+                            default:
+                                $$.type = -1;
+                                break;
+                }
+            }
+        }
+    }
+    | PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE {
+            $$=$2;
+    }
+    | NEG Expression {
+            if($2.type == TYPE_BOOLEAN)
+            {
+                $$.type=TYPE_BOOLEAN;
+                $$.booleanValue=!$2.booleanValue;
+            }
+            else
+            {
+                printf("Cannot find negatif of non boolean expression !\n");
+            }
+    }
+    | SUB Expression {
+            if($2.type != TYPE_STRING)
+            {
+                if($2.type == TYPE_INTEGER)
+                {
+                    $$.type=TYPE_INTEGER;
+                    $$.integerValue=0-$2.integerValue;
+                }
+                else
+                {
+                    if($2.type == TYPE_FLOAT)
+                    {
+                        $$.type=TYPE_FLOAT;
+                        $$.floatValue=0.0-$2.floatValue;
+                    }
+                }
+            }
+            else{
+                printf("Cannot get negative of non numeric expression ! \n");
+            }
+    }
+    | ADD Expression {
+            if($2.type != TYPE_STRING)
+            {
+                if($2.type == TYPE_INTEGER)
+                {
+                    $$.type=TYPE_INTEGER;
+                    $$.integerValue=0+$2.integerValue;
+                }
+                else
+                {
+                    if($2.type == TYPE_FLOAT)
+                    {
+                        $$.type=TYPE_FLOAT;
+                        $$.floatValue=0.0+$2.floatValue;
+                    }
+                }
+            }
+            else{
+                printf("Cannot get negative of non numeric expression ! \n");
+            }
+    }
+    | Expression ADD Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    printf("%d\n",$1.type);
+                    if($1.type == TYPE_STRING)
+                    {
+                        strcpy($$.stringValue,$1.stringValue);
+                        strcat($$.stringValue,$3.stringValue);
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $$.integerValue=$1.integerValue+$3.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $$.floatValue=$1.floatValue+$3.floatValue;
+                            }
+                            else
+                            {
+                                if($1.type == TYPE_BOOLEAN)
+                                {
+                                    $$.type=TYPE_BOOLEAN;
+                                    if(($1.booleanValue) || ($3.booleanValue))
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else
+                                    {
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression SUB Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $$.integerValue=$1.integerValue-$3.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $$.floatValue=$1.floatValue-$3.floatValue;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression MUL Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $$.integerValue=$1.integerValue * $3.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $$.floatValue=$1.floatValue * $3.floatValue;
+                            }
+                            else
+                            {
+                                if($1.type == TYPE_BOOLEAN)
+                                {
+                                    $$.type=TYPE_BOOLEAN;
+                                    if(($1.booleanValue) && ($3.booleanValue))
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else
+                                    {
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression MOD Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
+                    {
+                        printf("Division on zero\n");
+                    }
+                    else
+                    {
+                        if($$.type == TYPE_STRING)
+                        {
+                            printf("Type mismatch\n");
+                        }
+                        else{
+                            if($$.type == TYPE_INTEGER)
+                            {
+                                $$.integerValue=$1.integerValue % $3.integerValue;
+                            }
+                            else {
+                                if($$.type == TYPE_FLOAT)
+                                {
+                                    $$.floatValue=fmod($1.floatValue,$3.floatValue);
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression DIV Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
+                    {
+                        printf("Division on zero\n");
+                    }
+                    else
+                    {
+                        if($$.type == TYPE_STRING)
+                        {
+                            printf("Type mismatch\n");
+                        }
+                        else{
+                            if($$.type == TYPE_INTEGER)
+                            {
+                                $$.integerValue=$1.integerValue / $3.integerValue;
+                            }
+                            else {
+                                if($$.type == TYPE_FLOAT)
+                                {
+                                    $$.floatValue=$1.floatValue / $3.floatValue;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression POW Expression {
+            if(($1.type == $3.type) && ($$.type == $1.type)){
+                if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $$.integerValue=pow($1.integerValue,$3.integerValue);
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $$.floatValue=pow($1.floatValue,$3.floatValue);
+                            }
+                        }
+                    }
+            }
+            else{
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression ADDEQUALS Expression {
+            if(($1.type == $3.type) && ($$.type == $1.type)){
+                if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $1.integerValue=$1.integerValue + $3.integerValue;
+                            $$.integerValue=$1.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $1.floatValue=$1.floatValue + $3.floatValue;
+                                $$.floatValue=$1.floatValue;
+                            }
+                        }
+                    }
+            }
+            else{
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression SUBEQUALS Expression {
+            if(($1.type == $3.type) && ($$.type == $1.type)){
+                if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $1.integerValue=$1.integerValue - $3.integerValue;
+                            $$.integerValue=$1.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $1.floatValue=$1.floatValue - $3.floatValue;
+                                $$.floatValue=$1.floatValue;
+                            }
+                        }
+                    }
+            }
+            else{
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression MULEQUALS Expression {
+            if(($1.type == $3.type) && ($$.type == $1.type)){
+                if($$.type == TYPE_STRING)
+                    {
+                        printf("Type mismatch\n");
+                    }
+                    else{
+                        if($$.type == TYPE_INTEGER)
+                        {
+                            $1.integerValue=$1.integerValue * $3.integerValue;
+                            $$.integerValue=$1.integerValue;
+                        }
+                        else {
+                            if($$.type == TYPE_FLOAT)
+                            {
+                                $1.floatValue=$1.floatValue * $3.floatValue;
+                                $$.floatValue=$1.floatValue;
+                            }
+                        }
+                    }
+            }
+            else{
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression DIVEQUALS Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
+                    {
+                        printf("Division on zero\n");
+                    }
+                    else
+                    {
+                        if($$.type == TYPE_STRING)
+                        {
+                            printf("Type mismatch\n");
+                        }
+                        else{
+                            if($$.type == TYPE_INTEGER)
+                            {
+                                $1.integerValue=$1.integerValue / $3.integerValue;
+                                $$.integerValue=$1.integerValue;
+                            }
+                            else {
+                                if($$.type == TYPE_FLOAT)
+                                {
+                                    $1.floatValue=$1.floatValue / $3.floatValue;
+                                    $$.floatValue=$1.floatValue;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression MODEQUALS Expression {
+            if($1.type == $3.type){
+                if($$.type == $1.type){
+                    if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
+                    {
+                        printf("Division on zero\n");
+                    }
+                    else
+                    {
+                        if($$.type == TYPE_STRING)
+                        {
+                            printf("Type mismatch\n");
+                        }
+                        else{
+                            if($$.type == TYPE_INTEGER)
+                            {
+                                $1.integerValue=$1.integerValue % $3.integerValue;
+                                $$.integerValue=$1.integerValue;
+                            }
+                            else {
+                                if($$.type == TYPE_FLOAT)
+                                {
+                                    $1.floatValue=fmod($1.floatValue,$3.floatValue);
+                                    $$.floatValue=$1.floatValue;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    printf("Type mismatch\n");
+                }
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression LESS Expression {
+            if($1.type == $3.type){
+                
+                    $$.type=TYPE_BOOLEAN;
+                        if($1.type == TYPE_STRING)
+                        {
+                            if(strcmp($1.stringValue,$3.stringValue)< 0)
+                            {
+                                $$.booleanValue=true;
+                            }
+                            else{
+                                $$.booleanValue=false;
+                            }
+                        }
+                        else{
+                            if($1.type == TYPE_INTEGER)
+                            {
+                                if($1.integerValue < $3.integerValue)
+                                {
+                                    $$.booleanValue=true;
+                                }
+                                else{
+                                    $$.booleanValue=false;
+                                }
+                            }
+                            else {
+                                if($1.type == TYPE_FLOAT)
+                                {
+                                    if($1.floatValue < $3.floatValue)
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else{
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }   
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression LESSEQUALS Expression {
+            if($1.type == $3.type){
+                        $$.type=TYPE_BOOLEAN;
+                        if($1.type == TYPE_STRING)
+                        {
+                            if(strcmp($1.stringValue,$3.stringValue)<= 0)
+                            {
+                                $$.booleanValue=true;
+                            }
+                            else{
+                                $$.booleanValue=false;
+                            }
+                        }
+                        else{
+                            if($1.type == TYPE_INTEGER)
+                            {
+                                if($1.integerValue <= $3.integerValue)
+                                {
+                                    $$.booleanValue=true;
+                                }
+                                else{
+                                    $$.booleanValue=false;
+                                }
+                            }
+                            else {
+                                if($1.type == TYPE_FLOAT)
+                                {
+                                    if($1.floatValue <= $3.floatValue)
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else{
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }   
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression GREATER Expression {
+            if($1.type == $3.type){
+                $$.type=TYPE_BOOLEAN;
+                        if($1.type == TYPE_STRING)
+                        {
+                            if(strcmp($1.stringValue,$3.stringValue)> 0)
+                            {
+                                $$.booleanValue=true;
+                            }
+                            else{
+                                $$.booleanValue=false;
+                            }
+                        }
+                        else{
+                            if($1.type == TYPE_INTEGER)
+                            {
+                                if($1.integerValue > $3.integerValue)
+                                {
+                                    $$.booleanValue=true;
+                                    printf("%d\n",$$.booleanValue);
+                                }
+                                else{
+                                    $$.booleanValue=false;
+                                }
+                            }
+                            else {
+                                if($1.type == TYPE_FLOAT)
+                                {
+                                    if($1.floatValue > $3.floatValue)
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else{
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }   
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression GREATEREQUALS Expression {
+            if($1.type == $3.type){
+                $$.type=TYPE_BOOLEAN;
+                        if($1.type == TYPE_STRING)
+                        {
+                            if(strcmp($1.stringValue,$3.stringValue)>= 0)
+                            {
+                                $$.booleanValue=true;
+                            }
+                            else{
+                                $$.booleanValue=false;
+                            }
+                        }
+                        else{
+                            if($1.type == TYPE_INTEGER)
+                            {
+                                if($1.integerValue >= $3.integerValue)
+                                {
+                                    $$.booleanValue=true;
+                                }
+                                else{
+                                    $$.booleanValue=false;
+                                }
+                            }
+                            else {
+                                if($1.type == TYPE_FLOAT)
+                                {
+                                    if($1.floatValue >= $3.floatValue)
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else{
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }   
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression DOUBLEEQUALS Expression {
+            if($1.type == $3.type){
+                $$.type=TYPE_BOOLEAN;
+                        if($1.type == TYPE_STRING)
+                        {
+                            if(strcmp($1.stringValue,$3.stringValue) == 0)
+                            {
+                                $$.booleanValue=true;
+                            }
+                            else{
+                                $$.booleanValue=false;
+                            }
+                        }
+                        else{
+                            if($1.type == TYPE_INTEGER)
+                            {
+                                if($1.integerValue == $3.integerValue)
+                                {
+                                    $$.booleanValue=true;
+                                }
+                                else{
+                                    $$.booleanValue=false;
+                                }
+                            }
+                            else {
+                                if($1.type == TYPE_FLOAT)
+                                {
+                                    if($1.floatValue == $3.floatValue)
+                                    {
+                                        $$.booleanValue=true;
+                                    }
+                                    else{
+                                        $$.booleanValue=false;
+                                    }
+                                }
+                            }
+                        }   
+            }
+            else
+            {
+                printf("Type mismatch\n");
+            }
+    }
+    | Expression AND Expression {
+            if($1.booleanValue && $3.booleanValue)
+            {
+                $$.booleanValue=true;
+            }
+            else{
+                $$.booleanValue=false;
+            }
+    }
+    | Expression OR Expression {
+            if($1.booleanValue || $3.booleanValue)
+            {
+                $$.booleanValue=true;
+            }
+            else{
+                $$.booleanValue=false;
+            }
+    }
+
     
 DeclarationInitialisation:
     Declaration EQUALS Expression {
         if($1 != NULL){
             if($1->type == $3.type){
                 char valeurString[255];
-                valeurToString(&$3, valeurString);
+                valeurToString($3, valeurString);
                 setValeur($1, valeurString);
+
+                insererQuadreplet(q, ":=", valeurString, "", $1.nom, qc);
+                qc++;
             }else{
                 printf("Type mismatch\n");
             }
@@ -182,6 +884,13 @@ DeclarationInitialisation:
             if( $1->type == $3.type){
                 printf("Type match\n");
                 setTabValeur($1, $3.tabValeur, $3.length);
+
+                for(int i = 0; i< $3.length; i++){
+                    char buff[255];
+                    sprintf(buff, "%s[%d]", $1->nom, i);
+                    insererQuadreplet(q, ":=", $3.tabValeur[i], "", "buff", qc);
+                    qc++;
+                };
             }else{
                 printf("Type mismatch\n");
             }
@@ -190,10 +899,11 @@ DeclarationInitialisation:
     ;
 
 Declaration:
+// NO QUADS
     SimpleType ID {
         if(rechercherSymbole(tableSymboles, $2) == NULL){
             // Si l'ID n'existe pas alors l'inserer
-            symbole * nouveauSymbole = creerSymbole($2, $1, false);
+            symbole * nouveauSymbole = creerSymbole($2, $1, false, 0);
             insererSymbole(&tableSymboles, nouveauSymbole);
             $$ = nouveauSymbole;
         }else{
@@ -201,10 +911,11 @@ Declaration:
             $$ = NULL;
         }
     }
+    // NO QUADS
     |CONST SimpleType ID {
         if(rechercherSymbole(tableSymboles, $3) == NULL){
             // Si l'ID n'existe pas alors l'inserer
-            symbole * nouveauSymbole = creerSymbole($3, $2, true);
+            symbole * nouveauSymbole = creerSymbole($3, $2, true, 0);
             insererSymbole(&tableSymboles, nouveauSymbole);
             $$ = nouveauSymbole;
         }else{
@@ -215,22 +926,48 @@ Declaration:
     |LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT ID {
         if(rechercherSymbole(tableSymboles, $6) == NULL){
             // Si l'ID n'existe pas alors l'inserer
-            symbole * nouveauSymbole = creerSymbole($6, $2 + simpleToArrayOffset, false);
-            insererSymbole(&tableSymboles, nouveauSymbole);
-            $$ = nouveauSymbole;
+            if($4.type != TYPE_INTEGER || $4.integerValue < 1){
+                printf("La dimension du tableau doit etre un entier positif\n");
+            }else{
+                symbole * nouveauSymbole = creerSymbole($6, $2 + simpleToArrayOffset, false, $4.integerValue);
+                insererSymbole(&tableSymboles, nouveauSymbole);
+                $$ = nouveauSymbole;
+
+                char buff[255];
+                strcpy(buff, $4.integerValue);
+                insererQuadreplet(q, "BOUNDS","0", buff, "", qc);
+                qc++;
+
+                strcpy(buff, $4.integerValue);
+                insererQuadreplet(q, "ADEC", $6, "", "", qc);
+                qc++;
+            };
         }else{
             printf("Identifiant deja declare : %s\n", $6);
             $$ = NULL;
         }
     }
     |CONST LIST SimpleType CROCHETOUVRANT Expression CROCHETFERMANT ID {
-        if(rechercherSymbole(tableSymboles, $6) == NULL){
+        if(rechercherSymbole(tableSymboles, $7) == NULL){
             // Si l'ID n'existe pas alors l'inserer
-            symbole * nouveauSymbole = creerSymbole($6, $2 + simpleToArrayOffset, true);
-            insererSymbole(&tableSymboles, nouveauSymbole);
-            $$ = nouveauSymbole;
+            if($5.type != TYPE_INTEGER || $5.integerValue < 1){
+                printf("La dimension du tableau doit etre un entier positif\n");
+            }else{
+                symbole * nouveauSymbole = creerSymbole($7, $3 + simpleToArrayOffset, true, $5.integerValue);
+                insererSymbole(&tableSymboles, nouveauSymbole);
+                $$ = nouveauSymbole;
+
+                char buff[255];
+                strcpy(buff, $5.integerValue);
+                insererQuadreplet(q, "BOUNDS","0", buff, "", qc);
+                qc++;
+
+                strcpy(buff, $5.integerValue);
+                insererQuadreplet(q, "ADEC", $7, "", "", qc);
+                qc++;
+            };
         }else{
-            printf("Identifiant deja declare : %s\n", $6);
+            printf("Identifiant deja declare : %s\n", $7);
             $$ = NULL;
         }
     }
@@ -238,248 +975,516 @@ Declaration:
     
 Affectation:
     Variable EQUALS Expression { 
-        if(rechercherSymbole(tableSymboles,$1) != NULL){
-            if($1->type != $3.type ){
+        if($1.symbole != NULL){
+            if($1.symbole->type % simpleToArrayOffset != $3.type ){
                 printf("Erreur sémantique : types non compatibles");
-            }
-            else{
+            }else{
                 char valeurString[255];
-                getValeur($1,valeurString);
-                char valeurExpression[255];
-                valeurToString($3,valeurExpression);
-                if(strcmp(valeurString,valeurExpression) == 0){
-                    return true;
-                }
-                else{
-                    return false;
-                }
+                valeurToString($3,valeurString);
+                if($1.symbole->type < simpleToArrayOffset)
+                    {
+                        setValeur($1.symbole, valeurString);
 
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                        qc++;
+                    }
+                else
+                    {
+                        setArrayElement($1.symbole, $1.index, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                        qc++;
+                    }
             }
+        }
+
+    }        
+    | Variable INC {
+        if($1.symbole != NULL){
+            if(!$1.symbole->hasBeenInitialized){
+                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+            }else{
+                if($1.symbole->type % simpleToArrayOffset != TYPE_FLOAT
+                && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
+                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                }else{
+
+                    char valeurString[255];
+
+                    if($1.symbole->type < simpleToArrayOffset)
+                        {
+                            getValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, "++", $1.symbole->nom, "", $1.symbole->nom, qc);
+                            qc++;
+                        
+                        }
+                    else
+                        {
+                            getArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, "++", $1.symbole->array->tabValeur[$1.index], "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
+
+                    if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
+                        int valeur = atoi(valeurString);
+                        valeur++;
+                        sprintf(valeurString, "%d", valeur);
+                    }else{
+                        double valeur = atof(valeurString);
+                        valeur++;
+                        sprintf(valeurString,"%.4f",valeur);
+                    };
+                    if($1.symbole->type < simpleToArrayOffset)
+                        {
+                            setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;
+                        }
+                    else
+                        {
+                            setArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
+                }
+            }
+        }
             
-
-        }
-        else{
-            printf("Variable non déclarée");
-        }
     }
-        
-    | Variable INC{
-        if(rechercherSymbole(tableSymboles,$1) != NULL){
-            if($3->type != TYPE_FLOAT && $3->type != TYPE_INTEGER){
-                printf("Erreur sémantique : cette variable n'est pas de type entier ou réel");
+    | Variable DEC {
+        if($1.symbole != NULL){
+            if(!$1.symbole->hasBeenInitialized){
+                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+            }else{
+                if($1.symbole->type % simpleToArrayOffset != TYPE_FLOAT
+                && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
+                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                }else{
+                    char valeurString[255];
+                    
+                    if($1.symbole->type < simpleToArrayOffset)
+                        {
+                            getValeur($1.symbole, valeurString);
+                            
+                            insererQuadreplet(q, "--", $1.symbole->nom, "", $1.symbole->nom, qc);
+                            qc++;
+                        }
+                    else
+                        {
+                            getArrayElement($1.symbole, $1.index, valeurString);
+                            
+                            insererQuadreplet(q, "--", $1.symbole->array->tabValeur[$1.index], "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
+
+                    if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
+                        int valeur = atoi(valeurString);
+                        valeur--;
+                        sprintf(valeurString, "%d", valeur);
+                    }else{
+                        double valeur = atof(valeurString);
+                        valeur--;
+                        sprintf(valeurString,"%.4f",valeur);
+                    };
+                    if($1.symbole->type < simpleToArrayOffset)
+                        {
+                            setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;
+                        }
+                    else
+                        {
+                            setArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "",$1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
+                }
             }
-            else{
-                char valeurString[255];
-                getValeur($1,valeurString);
-                if($3->type == TYPE_INTEGER){
-                    int valeur = atoi(valeurString);
-                    valeur++;
-                    sprintf(valeurString, "%d", valeur);
-                    setValeur($1,valeurString);
-                }
-                else{
-                    double valeur = atof(valeurString);
-                    valeur++;
-                    sprintf(valeurString,"%.4f",valeur);
-                    setValeur($1,valeurString);
-                }
-
-            }
-            
-
-        }
-        else{
-            printf("Variable non déclarée");
-        }
-    }
-    | Variable DEC{
-        if(rechercherSymbole(tableSymboles,$1) != NULL){
-            if($3->type != TYPE_FLOAT && $3->type != TYPE_INTEGER){
-                printf("Erreur sémantique : cette variable n'est pas de type entier ou réel");
-            }
-            else{
-                char valeurString[255];
-                getValeur($1,valeurString);
-                if($3->type == TYPE_INTEGER){
-                    int valeur = atoi(valeurString);
-                    valeur--;
-                    sprintf(valeurString, "%d", valeur);
-                    setValeur($1,valeurString);
-                }
-                else{
-                    double valeur = atof(valeurString);
-                    valeur--;
-                    sprintf(valeurString,"%.4f",valeur);
-                    setValeur($1,valeurString);
-                }
-
-            }          
-
-        }
-        else{
-            printf("Variable non déclarée");
         }
     }     
-    | Variable ADDEQUALS Expression{
-        if(rechercherSymbole(tableSymboles,$1) != NULL){
-            if(($1->type == TYPE_FLOAT && $3.type == TYPE_FLOAT) || ($1->type == TYPE_INTEGER && $3.type == TYPE_INTEGER)){
-                char valeurString[255];
-                getValeur($1,valeurString);
-                if($1->type == TYPE_FLOAT){
-                    double valeurExpression = $3.floatValue;
-                    double valeur = atof(valeurString);
-                    double result = valeur + valeurExpression;
-                    sprintf(valeurString,"%.4f",result);
+    | Variable ADDEQUALS Expression {
+        if($1.symbole != NULL){
+            if(!$1.symbole->hasBeenInitialized){
+                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+            }else{
+                if($1.symbole->type % simpleToArrayOffset != $3.type){
+                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                }else{
+                    char valeurString[255];
+                    
+                    if($1.symbole->type < simpleToArrayOffset)
+                        {
+                            getValeur($1.symbole, valeurString);
 
+                            
+                        }
+                    else
+                        {
+                            getArrayElement($1.symbole, $1.index, valeurString);
+                            
+                        }
+
+                    if($1.symbole->type % simpleToArrayOffset == TYPE_STRING){
+                        {
+                            strcat(valeurString,$3.stringValue);
+                            if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, $3.stringValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], $3.stringValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            }  
+                        }
+                    }else if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
+                        int valeurExpression = $3.integerValue;
+                        int valeur = atoi(valeurString);
+                        int result = valeur + valeurExpression;
+                        sprintf(valeurString, "%d", result);
+
+                        if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                    }else if($1.symbole->type % simpleToArrayOffset == TYPE_FLOAT){
+                        double valeurExpression = $3.floatValue;
+                        double valeur = atof(valeurString);
+                        double result = valeur + valeurExpression;
+                        sprintf(valeurString,"%.4f",result);
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                    }else{
+                        if($3.booleanValue){
+                            strcpy(valeurString, "true");
+
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, "true", $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], "true", $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                        };
+                    };
+                    if($1.symbole->type < simpleToArrayOffset)
+                        {
+                            setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;
+                        }
+                    else
+                        {
+                            setArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
                 }
-                else{
-                    int valeurExpression = $3.integerValue;
-                    int valeur = atoi(valeurString);
-                    int result = valeur + valeurExpression;
-                    sprintf(valeurString, "%d", result);
-
-                }
-                setValeur($1,valeurString);
-
             }
-            else{
-                printf("Erreur sémantique : types non compatibles");
-            }
-            
-
         }
-        else{
-            printf("Variable non déclarée");
-        }
-    }      
-    | Variable SUBEQUALS Expression{
-        if(rechercherSymbole(tableSymboles,$1) != NULL){
-            if(($1->type == TYPE_FLOAT && $3.type == TYPE_FLOAT) || ($1->type == TYPE_INTEGER && $3.type == TYPE_INTEGER)){
-                char valeurString[255];
-                getValeur($1,valeurString);
-                if($1->type == TYPE_FLOAT){
-                    double valeurExpression = $3.floatValue;
-                    double valeur = atof(valeurString);
-                    double result = valeur - valeurExpression;
-                    sprintf(valeurString,"%.4f",result);
+    }   
+    | Variable SUBEQUALS Expression {
+        if($1.symbole != NULL){
+            if(!$1.symbole->hasBeenInitialized){
+                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+            }else{
+                if($1.symbole->type % simpleToArrayOffset != $3.type){
+                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                }else{
+                    if($1.symbole->type % simpleToArrayOffset != TYPE_FLOAT
+                    && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
+                        printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                    }else{
 
+                    char valeurString[255];
+                    
+                    if($1.symbole->type < simpleToArrayOffset)
+                        {
+                            getValeur($1.symbole, valeurString);
+
+                        }
+                    else
+                        {
+                            getArrayElement($1.symbole, $1.index, valeurString);
+
+
+                        }
+
+                    if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
+                        int valeurExpression = $3.integerValue;
+                        int valeur = atoi(valeurString);
+                        int result = valeur - valeurExpression;
+                        sprintf(valeurString, "%d", result);
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "-=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "-=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                    }else{
+                        double valeurExpression = $3.floatValue;
+                        double valeur = atof(valeurString);
+                        double result = valeur - valeurExpression;
+                        sprintf(valeurString,"%.4f",result);
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "-=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "-=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                    };
+                    if($1.symbole->type < simpleToArrayOffset)
+                        {setValeur($1.symbole, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                        qc++;}
+                    else{
+                        setArrayElement($1.symbole, $1.index, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                        qc++;}
+                    }
                 }
-                else{
-                    int valeurExpression = $3.integerValue;
-                    int valeur = atoi(valeurString);
-                    int result = valeur - valeurExpression;
-                    sprintf(valeurString, "%d", result);
-
-                }
-                setValeur($1,valeurString);
-
             }
-            else{
-                printf("Erreur sémantique : types non compatibles");
-            }
-            
-
-        }
-        else{
-            printf("Variable non déclarée");
         }
     }
-    | Variable MULEQUALS Expression{
-        if(rechercherSymbole(tableSymboles,$1) != NULL){
-            if(($1->type == TYPE_FLOAT && $3.type == TYPE_FLOAT) || ($1->type == TYPE_INTEGER && $3.type == TYPE_INTEGER)){
-                char valeurString[255];
-                getValeur($1,valeurString);
-                if($1->type == TYPE_FLOAT){
-                    double valeurExpression = $3.floatValue;
-                    double valeur = atof(valeurString);
-                    double result = valeur * valeurExpression;
-                    sprintf(valeurString,"%.4f",result);
+    | Variable MULEQUALS Expression {
+        if($1.symbole != NULL){
+            if(!$1.symbole->hasBeenInitialized){
+                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+            }else{
+                if($1.symbole->type % simpleToArrayOffset != $3.type){
+                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                }else{
+                    if($1.symbole->type % simpleToArrayOffset != TYPE_FLOAT
+                    && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER
+                    && $1.symbole->type % simpleToArrayOffset != TYPE_BOOLEAN){
+                        printf("Erreur sémantique : cette variable nest pas de type entier ou réel ou boolean");
+                    }else{
 
+                    char valeurString[255];
+                    
+                    if($1.symbole->type < simpleToArrayOffset)
+                        {
+                            getValeur($1.symbole, valeurString);
+                        }
+                    else{
+                        getArrayElement($1.symbole, $1.index, valeurString);
+                    }
+
+                    if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
+                        int valeurExpression = $3.integerValue;
+                        int valeur = atoi(valeurString);
+                        int result = valeur * valeurExpression;
+                        sprintf(valeurString, "%d", result);
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "*=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                    }else if($1.symbole->type % simpleToArrayOffset == TYPE_FLOAT){
+                        double valeurExpression = $3.floatValue;
+                        double valeur = atof(valeurString);
+                        double result = valeur * valeurExpression;
+                        sprintf(valeurString,"%.4f",result);
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "*=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                    }else{
+                        if($3.booleanValue){
+                            if($1.symbole->type < simpleToArrayOffset){
+                                if(!strcmp($1.symbole->valeur, "true")){
+                                    strcpy(valeurString, "false");
+                                };
+                            }else{
+                                if(!strcmp($1.symbole->array->tabValeur[$1.index], "true")){
+                                    strcpy(valeurString, "false");
+                                };
+                            };
+
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "*=", $1.symbole->nom, $3.booleanValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.booleanValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                        };
+                        
+                    };
+                    if($1.symbole->type < simpleToArrayOffset)
+                        {setValeur($1.symbole, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                        qc++;}
+                    else
+                        {setArrayElement($1.symbole, $1.index, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                        qc++;}
+                    }
                 }
-                else{
-                    int valeurExpression = $3.integerValue;
-                    int valeur = atoi(valeurString);
-                    int result = valeur * valeurExpression;
-                    sprintf(valeurString, "%d", result);
-
-                }
-                setValeur($1,valeurString);
-
             }
-            else{
-                printf("Erreur sémantique : types non compatibles");
-            }
-            
-
-        }
-        else{
-            printf("Variable non déclarée");
         }
     }
-    | Variable DIVEQUALS Expression{
-        if(rechercherSymbole(tableSymboles,$1) != NULL){
-            if(($1->type == TYPE_FLOAT && $3.type == TYPE_FLOAT) || ($1->type == TYPE_INTEGER && $3.type == TYPE_INTEGER)){
-                char valeurString[255];
-                getValeur($1,valeurString);
-                if($1->type == TYPE_FLOAT){
-                    double valeurExpression = $3.floatValue;
-                    double valeur = atof(valeurString);
-                    double result = valeur / valeurExpression;
-                    sprintf(valeurString,"%.4f",result);
+    | Variable DIVEQUALS Expression {
+        if($1.symbole != NULL){
+            if(!$1.symbole->hasBeenInitialized){
+                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+            }else{
+                if($1.symbole->type % simpleToArrayOffset != $3.type){
+                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                }else{
+                    if($1.symbole->type % simpleToArrayOffset != TYPE_FLOAT
+                    && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
+                        printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                    }else{
 
+                        char valeurString[255];
+
+                        if($1.symbole->type < simpleToArrayOffset)
+                            
+                            {
+                                getValeur($1.symbole, valeurString);
+
+                            }
+                        else{
+                            getArrayElement($1.symbole, $1.index, valeurString);
+                            
+                        }
+
+                        if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
+                            int valeurExpression = $3.integerValue;
+                            int valeur = atoi(valeurString);
+                            int result = valeur / valeurExpression;
+                            sprintf(valeurString, "%d", result);
+
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "/=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "/=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                        }else {
+                            double valeurExpression = $3.floatValue;
+                            double valeur = atof(valeurString);
+                            double result = valeur / valeurExpression;
+                            sprintf(valeurString,"%.4f",result);
+
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "/=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "/=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                        };
+                        if($1.symbole->type < simpleToArrayOffset)
+                            {setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;}
+                        else
+                            {setArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;}
+                    }
                 }
-                else{
-                    int valeurExpression = $3.integerValue;
-                    int valeur = atoi(valeurString);
-                    int result = valeur / valeurExpression;
-                    sprintf(valeurString, "%d", result);
-                    //C'est ça donne un réel comment traiter ?
-
-                }
-                setValeur($1,valeurString);
-
             }
-            else{
-                printf("Erreur sémantique : types non compatibles");
-            }
-            
-
-        }
-        else{
-            printf("Variable non déclarée");
         }
     }
-    | Variable MODEQUALS Expression{
-        if(rechercherSymbole(tableSymboles,$1) != NULL){
-            if(($1->type == TYPE_FLOAT && $3.type == TYPE_FLOAT) || ($1->type == TYPE_INTEGER && $3.type == TYPE_INTEGER)){
-                char valeurString[255];
-                getValeur($1,valeurString);
-                if($1->type == TYPE_FLOAT){
-                    double valeurExpression = $3.floatValue;
-                    double valeur = atof(valeurString);
-                    double result = valeur % valeurExpression;
-                    sprintf(valeurString,"%.4f",result);
+    | Variable MODEQUALS Expression {
+        if($1.symbole != NULL){
+            if(!$1.symbole->hasBeenInitialized){
+                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+            }else{
+                if($1.symbole->type % simpleToArrayOffset != $3.type){
+                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                }else{
+                    if($1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
+                        printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                    }else{
 
+                        char valeurString[255];
+                        
+                        if($1.symbole->type < simpleToArrayOffset){
+                            getValeur($1.symbole, valeurString);
+
+                            }
+                        else{
+                            getArrayElement($1.symbole, $1.index, valeurString);
+                            }
+
+                        int valeurExpression = $3.integerValue;
+                        int valeur = atoi(valeurString);
+                        int result = valeur % valeurExpression;
+                        sprintf(valeurString, "%d", result);
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "%=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "%=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
+                        if($1.symbole->type < simpleToArrayOffset)
+                            {
+                                setValeur($1.symbole, valeurString);
+
+                                insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                                qc++;
+                            }
+                        else
+                            {
+                                setArrayElement($1.symbole, $1.index, valeurString);
+
+                                insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            }
+                    }
                 }
-                else{
-                    int valeurExpression = $3.integerValue;
-                    int valeur = atoi(valeurString);
-                    int result = valeur % valeurExpression;
-                    sprintf(valeurString, "%d", result);
-                    //C'est ça donne un réel comment traiter ?
-
-                }
-                setValeur($1,valeurString);
-
             }
-            else{
-                printf("Erreur sémantique : types non compatibles");
-            }
-            
-
-        }
-        else{
-            printf("Variable non déclarée");
         }
     }
     ;
@@ -490,8 +1495,6 @@ Statement:
     | Affectation SEMICOLUMN
     | Boucle
     | Condition
-    | BREAK SEMICOLUMN
-    | CONTINUE SEMICOLUMN
     ;
     
 Condition:
@@ -521,7 +1524,7 @@ Tableau:
         $$.type = $2.type + simpleToArrayOffset;
     
         char valeurString[255];
-        valeurToString(&$2, valeurString);
+        valeurToString($2, valeurString);
         strcpy($$.tabValeur[0], valeurString);
         $$.length = 1;
     }
@@ -534,12 +1537,10 @@ Tableau:
             for(int i=0;i<$3.length;i++){
             strcpy($$.tabValeur[i], $3.tabValeur[i]);};
 
-            printf("lololol\n\n\n");
-
             $$.length = $3.length;
 
             char valeurString[255];
-            valeurToString(&$2, valeurString);
+            valeurToString($2, valeurString);
 
             strcpy($$.tabValeur[$$.length], valeurString);
             $$.length += 1;
@@ -554,7 +1555,7 @@ ComaLoopExpression:
     COMA Expression {
         $$.type = $2.type;
         char valeurString[255];
-        valeurToString(&$2, valeurString);
+        valeurToString($2, valeurString);
         strcpy($$.tabValeur[0], valeurString);
         $$.length = 1;
     }
@@ -568,7 +1569,7 @@ ComaLoopExpression:
             $$.length = $3.length;
 
             char valeurString[255];
-            valeurToString(&$2, valeurString);
+            valeurToString($2, valeurString);
 
             strcpy($$.tabValeur[$$.length], valeurString);
             $$.length += 1;
@@ -579,8 +1580,39 @@ ComaLoopExpression:
     ;
 
 Variable:
-    ID
-    |ID CROCHETOUVRANT Expression CROCHETFERMANT
+    ID {
+        symbole * s = rechercherSymbole(tableSymboles, $1);
+        if(s==NULL){
+            printf("Variable inconnue: %s", $1);
+            $$.symbole = NULL;
+        }else if(s->type >= simpleToArrayOffset){
+            printf("Mauvais referencement du tableau %s, voulez-vous dire %s[<index>]", $1, $1);
+            $$.symbole = NULL;
+        }else{
+            $$.symbole = s;
+            $$.index = -1;
+        }
+    }
+    |ID CROCHETOUVRANT Expression CROCHETFERMANT {
+        if($3.type != TYPE_INTEGER){
+            printf("L'index doit etre un entier");
+            $$.symbole = NULL;
+        }else{
+
+            symbole * s = rechercherSymbole(tableSymboles, $1);
+            if(s==NULL){
+                printf("Variable inconnue: %s", $1);
+                $$.symbole = NULL;
+            }else if(s->type < simpleToArrayOffset){
+                printf("%s est une variable et non un tableau", $1);
+                $$.symbole = NULL;
+            }else{
+                
+                $$.symbole = s;
+                $$.index = $3.integerValue;
+            }
+        }
+    }
     ;
 
 %%
