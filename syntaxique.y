@@ -1267,9 +1267,10 @@ Statement:
     ;
     
 Condition:
-    IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE routineIf ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE ConditionELSE
+    DebutIf ACCOLADEOUVRANTE Bloc ACCOLADEFERMANTE ConditionELSE
     ;
-routineIf:{
+DebutIf : 
+    IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE { // routine debut if
     // ici on est aprés la condition du if
     if($3.type == TYPE_BOOLEAN){
         char r[10]; // contien le resultat de l'expression de la condition
@@ -1284,11 +1285,30 @@ routineIf:{
         printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
     }
 }
-ConditionELSE: %empty
+;
+ConditionELSE: %empty { // routine fin if quand y a pas du else
+        // ici on est a la fin de if et pas du else
+        // on met a jour l'addresse de jump vers la fin de if 
+        char adresse[10];
+        sprintf(adresse,"%d",qc);
+        int sauv = depiler(&pile);// depiler pour avoir la derniere adresse
+        // sauvgardee dans la pile et updater le branchement de if avec l'adresse de fin if
+        q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du la routine if
+        qc++;
+    }
     | ELSE Condition 
-    | ELSE ACCOLADEOUVRANTE routinElse Bloc ACCOLADEFERMANTE routineFinElse
-    ;
-routineElse:{
+    | DebutElse Bloc ACCOLADEFERMANTE { // routine finElse
+	// ici on est a la fin du else
+    // on met a jour l'addresse de jump vers la fin de else 
+    char adresse[10];
+	sprintf(adresse,"%d",qc);
+    int sauv = depiler(&pile);// depiler pour avoir la derniere addresse
+	// sauvgardee dans la pile et updater le branchement de else avec l'adresse debut de fin
+	q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine else
+    qc++;
+}
+;
+DebutElse : ELSE ACCOLADEOUVRANTE { // routineElse
     // ici c'est le debut de else
 	char adresse[10];
 	sprintf(adresse,"%d",qc);
@@ -1299,41 +1319,10 @@ routineElse:{
 	empiler(&pile,qc);
     qc++;
 }
-routineFinElse:{
-	// ici on est a la fin du else
-    // on met a jour l'addresse de jump vers la fin de else 
-    char adresse[10];
-	sprintf(adresse,"%d",qc);
-    int sauv = depiler(&pile);// depiler pour avoire la derniere addresse
-	// sauvgardee dans la pile et updater le branchement de else avec l'dresse debut de fin
-	q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine else
-    qc++;
-}
+;
 
 While:
-    WHILE PARENTHESEOUVRANTE routineCondWhile Expression PARENTHESEFERMANTE  ACCOLADEOUVRANTE routineDebutWhile Bloc ACCOLADEFERMANTE routineFinWhile
-    ;
-routineCondWhile : {
-    // ici on est avant la condition du while
-    empiler(&pile,qc-1); // on sauvgarde l'addresse de cette quadreplet 
-    // it think it's qc-1 car on incrémonte le qc aprés l'insertion
-}
-routineDebutWhile{
-    // ici c'est le debut de while
-    if($4.type == TYPE_BOOLEAN){ // normalemeent ça change à 4 quand on insert la routine
-        char r[10]; // contien le resultat de l'expression de la condition
-        sprintf(r,"R%d",qc);	// this writes R to the r string
-		q = insererQuadreplet(q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
-        // to finWhile
-		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
-        // quadreplet
-		qc++;
-    }else{
-        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
-    }
-}
-
-routineFinWhile : {
+    DebutWhile Bloc ACCOLADEFERMANTE { // routineFinWhile
     // ici c'est la fin du while
 	char adresse[10];
    
@@ -1351,32 +1340,36 @@ routineFinWhile : {
     sprintf(adresse,"%d",qc);
     q = updateQuadreplet(q,sauvAdrDebutWhile,adresse);
 }
-
-For: 
-    FOR PARENTHESEOUVRANTE DeclarationInitialisation SEMICOLUMN routineCondFor Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE routineDebutFor Bloc routineFinFor ACCOLADEFERMANTE
-    ;
-routineCondFor : {
-    // ici on est avant l'expression de la condition du For
-    empiler(&pile,qc-1); // on sauvgarde l'addresse de cette quadreplet 
-    // it think it's qc-1 car on incrémonte le qc aprés l'insertion
-    //pour se brancher ici a la fin de l'iteration et reevaluer la condition
-    isForLoop = 1;
-}
-routineDebutFor : {
-// ici c'est le debut du for
-    if($6.type == TYPE_BOOLEAN){ // normalemeent ça change à $6 quand on insert les routines
+;
+DebutWhile : 
+    ConditionWhile Expression PARENTHESEFERMANTE  ACCOLADEOUVRANTE { //routineDebutWhile
+    // ici c'est le debut de while
+    if($2.type == TYPE_BOOLEAN){
         char r[10]; // contien le resultat de l'expression de la condition
         sprintf(r,"R%d",qc);	// this writes R to the r string
 		q = insererQuadreplet(q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
-        // to finFor (le prochain bloc d'instructions)
+        // to finWhile
 		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
-        // quadreplet apres avec l'adresse de finFor
+        // quadreplet
 		qc++;
     }else{
         printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
     }
 }
-routineFinFor : {
+;
+
+ConditionWhile:
+    WHILE PARENTHESEOUVRANTE { // routineCondWhile
+    // ici on est avant la condition du while
+    empiler(&pile,qc-1); // on sauvgarde l'addresse de cette quadreplet 
+    // it think it's qc-1 car on incrémonte le qc aprés l'insertion
+}
+;
+
+
+
+For: 
+    DebutFor Bloc  ACCOLADEFERMANTE  { // routineFinFor
     // ici c'est la fin du for
 	char adresse[10];
 
@@ -1398,6 +1391,34 @@ routineFinFor : {
     sprintf(adresse,"%d",qc);
     q = updateQuadreplet(q,sauvAdrDebutFor,adresse);
 }
+;
+
+DebutFor : 
+    ConditionFor Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE  { //routineDebutFor
+// ici c'est le debut du for
+    if($2.type == TYPE_BOOLEAN){ // normalemeent ça change à $6 quand on insert les routines
+        char r[10]; // contien le resultat de l'expression de la condition
+        sprintf(r,"R%d",qc);	// this writes R to the r string
+		q = insererQuadreplet(q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
+        // to finFor (le prochain bloc d'instructions)
+		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
+        // quadreplet apres avec l'adresse de finFor
+		qc++;
+    }else{
+        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
+    }
+}
+;
+
+ConditionFor : 
+    FOR PARENTHESEOUVRANTE DeclarationInitialisation SEMICOLUMN { // routineCondFor 
+    // ici on est avant l'expression de la condition du For
+    empiler(&pile,qc-1); // on sauvgarde l'addresse de cette quadreplet 
+    // it think it's qc-1 car on incrémonte le qc aprés l'insertion
+    //pour se brancher ici a la fin de l'iteration et reevaluer la condition
+    isForLoop = 1;
+}
+;
 Boucle:
     While
     | For
