@@ -210,6 +210,13 @@ Expression:
             {
                 $$.type=TYPE_BOOLEAN;
                 $$.booleanValue=!$2.booleanValue;
+
+                char buff[255];
+                char qcString[20];
+                strcpy(buff, ($2.booleanValue == true) ? "true" : "false");
+                sprintf(qcString, "%s%d", "R",qc);
+                insererQuadreplet(q, "NEG","", buff, "", qc);
+                qc++;
             }
             else
             {
@@ -223,6 +230,13 @@ Expression:
                 {
                     $$.type=TYPE_INTEGER;
                     $$.integerValue=0-$2.integerValue;
+                
+                    char buff[255];
+                    char qcString[20];
+                    sprintf(buff, "%d", $2.integerValue);
+                    sprintf(qcString, "%s%d", "R",qc);
+                    insererQuadreplet(q, "SUB","0", buff, "", qc);
+                    qc++;
                 }
                 else
                 {
@@ -230,6 +244,13 @@ Expression:
                     {
                         $$.type=TYPE_FLOAT;
                         $$.floatValue=0.0-$2.floatValue;
+                        
+                        char buff[255];
+                        char qcString[20];
+                        sprintf(buff, "%f", $2.floatValue);
+                        sprintf(qcString, "%s%d", "R",qc);
+                        insererQuadreplet(q, "SUB","0", buff, "", qc);
+                        qc++;
                     }
                 }
             }
@@ -260,22 +281,43 @@ Expression:
     }
     | Expression ADD Expression {
             if($1.type == $3.type){
-                if($$.type == $1.type){
-                    printf("%d\n",$1.type);
                     if($1.type == TYPE_STRING)
                     {
                         strcpy($$.stringValue,$1.stringValue);
                         strcat($$.stringValue,$3.stringValue);
+
+                        char qcString[20];
+                        sprintf(qcString, "%s%d", "R",qc);
+                        insererQuadreplet(q, "ADD",$1.stringValue, $3.stringValue, qcString, qc);
+                        qc++;
                     }
                     else{
-                        if($$.type == TYPE_INTEGER)
+                        if($1.type == TYPE_INTEGER)
                         {
                             $$.integerValue=$1.integerValue+$3.integerValue;
+
+                            char buff[255];
+                            char buff2[255];
+                            char qcString[20];
+                            sprintf(buff, "%d", $1.integerValue);
+                            sprintf(buff2, "%d", $3.integerValue);
+                            sprintf(qcString, "%s%d", "R",qc);
+                            insererQuadreplet(q, "ADD",buff, buff2,qcString, qc);
+                            qc++;
                         }
                         else {
-                            if($$.type == TYPE_FLOAT)
+                            if($1.type == TYPE_FLOAT)
                             {
                                 $$.floatValue=$1.floatValue+$3.floatValue;
+                                
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%f", $1.floatValue);
+                                sprintf(buff2, "%f", $3.floatValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "ADD",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             else
                             {
@@ -289,16 +331,20 @@ Expression:
                                     else
                                     {
                                         $$.booleanValue=false;
-                                    }
+                                    };
+
+                                    char buff[255];
+                                    char buff2[255];
+                                    char qcString[20];
+                                    strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+                                    strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "ADD",buff, buff2,qcString, qc);
+                                    qc++;
                                 }
                             }
                         }
                     }
-                }
-                else
-                {
-                    printf("Type mismatch\n");
-                }
             }
             else
             {
@@ -307,28 +353,38 @@ Expression:
     }
     | Expression SUB Expression {
             if($1.type == $3.type){
-                if($$.type == $1.type){
-                    if($$.type == TYPE_STRING)
+                    if($1.type == TYPE_STRING)
                     {
                         printf("Type mismatch\n");
                     }
                     else{
-                        if($$.type == TYPE_INTEGER)
+                        if($1.type == TYPE_INTEGER)
                         {
                             $$.integerValue=$1.integerValue-$3.integerValue;
+                            char buff[255];
+                            char buff2[255];
+                            char qcString[20];
+                            sprintf(buff, "%d", $1.integerValue);
+                            sprintf(buff2, "%d", $3.integerValue);
+                            sprintf(qcString, "%s%d", "R",qc);
+                            insererQuadreplet(q, "sub",buff, buff2,qcString, qc);
+                            qc++;
                         }
                         else {
-                            if($$.type == TYPE_FLOAT)
+                            if($1.type == TYPE_FLOAT)
                             {
                                 $$.floatValue=$1.floatValue-$3.floatValue;
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%f", $1.floatValue);
+                                sprintf(buff2, "%f", $3.floatValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "SUB",buff, buff2,qcString, qc);
+                                qc++;
                             }
                         }
                     }
-                }
-                else
-                {
-                    printf("Type mismatch\n");
-                }
             }
             else
             {
@@ -337,20 +393,37 @@ Expression:
     }
     | Expression MUL Expression {
             if($1.type == $3.type){
-                if($$.type == $1.type){
-                    if($$.type == TYPE_STRING)
+                    if($1.type == TYPE_STRING)
                     {
                         printf("Type mismatch\n");
                     }
                     else{
-                        if($$.type == TYPE_INTEGER)
+                        if($1.type == TYPE_INTEGER)
                         {
                             $$.integerValue=$1.integerValue * $3.integerValue;
+
+                            char buff[255];
+                            char buff2[255];
+                            char qcString[20];
+                            sprintf(buff, "%d", $1.integerValue);
+                            sprintf(buff2, "%d", $3.integerValue);
+                            sprintf(qcString, "%s%d", "R",qc);
+                            insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                            qc++;
                         }
                         else {
-                            if($$.type == TYPE_FLOAT)
+                            if($1.type == TYPE_FLOAT)
                             {
                                 $$.floatValue=$1.floatValue * $3.floatValue;
+
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%f", $1.floatValue);
+                                sprintf(buff2, "%f", $3.floatValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             else
                             {
@@ -364,16 +437,19 @@ Expression:
                                     else
                                     {
                                         $$.booleanValue=false;
-                                    }
+                                    };
+                                    char buff[255];
+                                    char buff2[255];
+                                    char qcString[20];
+                                    strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+                                    strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                    qc++;
                                 }
                             }
                         }
                     }
-                }
-                else
-                {
-                    printf("Type mismatch\n");
-                }
             }
             else
             {
@@ -382,7 +458,6 @@ Expression:
     }
     | Expression MOD Expression {
             if($1.type == $3.type){
-                if($$.type == $1.type){
                     if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
                     {
                         printf("Division on zero\n");
@@ -397,20 +472,53 @@ Expression:
                             if($$.type == TYPE_INTEGER)
                             {
                                 $$.integerValue=$1.integerValue % $3.integerValue;
+
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%d", $1.integerValue);
+                                sprintf(buff2, "%d", $3.integerValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "DIV",buff, buff2,qcString, qc);
+                                qc++;
+                                strcpy(buff, qcString);
+                                sprintf(buff2, "%d", $3.integerValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                qc++;
+                                sprintf(buff, "%d", $1.integerValue);
+                                strcpy(buff2, qcString);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "SUB",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             else {
                                 if($$.type == TYPE_FLOAT)
                                 {
                                     $$.floatValue=fmod($1.floatValue,$3.floatValue);
+
+                                    char buff[255];
+                                    char buff2[255];
+                                    char qcString[20];
+                                    sprintf(buff, "%f", $1.floatValue);
+                                    sprintf(buff2, "%f", $3.floatValue);
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "DIV",buff, buff2,qcString, qc);
+                                    qc++;
+                                    strcpy(buff, qcString);
+                                    sprintf(buff2, "%f", $3.floatValue);
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                    qc++;
+                                    sprintf(buff, "%f", $1.floatValue);
+                                    strcpy(buff2, qcString);
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "SUB",buff, buff2,qcString, qc);
+                                    qc++;
                                 }
                             }
                         }
                     }
-                }
-                else
-                {
-                    printf("Type mismatch\n");
-                }
             }
             else
             {
@@ -419,35 +527,46 @@ Expression:
     }
     | Expression DIV Expression {
             if($1.type == $3.type){
-                if($$.type == $1.type){
                     if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
                     {
                         printf("Division on zero\n");
                     }
                     else
                     {
-                        if($$.type == TYPE_STRING)
+                        if($1.type == TYPE_STRING)
                         {
                             printf("Type mismatch\n");
                         }
                         else{
-                            if($$.type == TYPE_INTEGER)
+                            if($1.type == TYPE_INTEGER)
                             {
                                 $$.integerValue=$1.integerValue / $3.integerValue;
+
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%d", $1.integerValue);
+                                sprintf(buff2, "%d", $3.integerValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "DIV",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             else {
-                                if($$.type == TYPE_FLOAT)
+                                if($1.type == TYPE_FLOAT)
                                 {
                                     $$.floatValue=$1.floatValue / $3.floatValue;
+                                    char buff[255];
+                                    char buff2[255];
+                                    char qcString[20];
+                                    sprintf(buff, "%f", $1.floatValue);
+                                    sprintf(buff2, "%f", $3.floatValue);
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "DIV",buff, buff2,qcString, qc);
+                                    qc++;
                                 }
                             }
                         }
                     }
-                }
-                else
-                {
-                    printf("Type mismatch\n");
-                }
             }
             else
             {
@@ -455,184 +574,61 @@ Expression:
             }
     }
     | Expression POW Expression {
-            if(($1.type == $3.type) && ($$.type == $1.type)){
-                if($$.type == TYPE_STRING)
+            if(($1.type == $3.type)){
+                if($1.type == TYPE_STRING)
                     {
                         printf("Type mismatch\n");
                     }
                     else{
-                        if($$.type == TYPE_INTEGER)
+                        if($1.type == TYPE_INTEGER)
                         {
                             $$.integerValue=pow($1.integerValue,$3.integerValue);
+                            char buff[255];
+                            char buff2[255];
+                            char qcString[20];
+                            int cpt = 0;
+                            sprintf(buff, "%d", $1.integerValue);
+                            sprintf(buff2, "%d", $3.integerValue);
+                            while(cpt<$3.integerValue)
+                            {
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                strcpy(buff, qcString);
+                                qc++;
+                                cpt++;
+                            }
+                            
                         }
                         else {
-                            if($$.type == TYPE_FLOAT)
+                            if($1.type == TYPE_FLOAT && $3.type == TYPE_INTEGER)
                             {
-                                $$.floatValue=pow($1.floatValue,$3.floatValue);
-                            }
-                        }
-                    }
-            }
-            else{
-                printf("Type mismatch\n");
-            }
-    }
-    | Expression ADDEQUALS Expression {
-            if(($1.type == $3.type) && ($$.type == $1.type)){
-                if($$.type == TYPE_STRING)
-                    {
-                        printf("Type mismatch\n");
-                    }
-                    else{
-                        if($$.type == TYPE_INTEGER)
-                        {
-                            $1.integerValue=$1.integerValue + $3.integerValue;
-                            $$.integerValue=$1.integerValue;
-                        }
-                        else {
-                            if($$.type == TYPE_FLOAT)
-                            {
-                                $1.floatValue=$1.floatValue + $3.floatValue;
-                                $$.floatValue=$1.floatValue;
-                            }
-                        }
-                    }
-            }
-            else{
-                printf("Type mismatch\n");
-            }
-    }
-    | Expression SUBEQUALS Expression {
-            if(($1.type == $3.type) && ($$.type == $1.type)){
-                if($$.type == TYPE_STRING)
-                    {
-                        printf("Type mismatch\n");
-                    }
-                    else{
-                        if($$.type == TYPE_INTEGER)
-                        {
-                            $1.integerValue=$1.integerValue - $3.integerValue;
-                            $$.integerValue=$1.integerValue;
-                        }
-                        else {
-                            if($$.type == TYPE_FLOAT)
-                            {
-                                $1.floatValue=$1.floatValue - $3.floatValue;
-                                $$.floatValue=$1.floatValue;
-                            }
-                        }
-                    }
-            }
-            else{
-                printf("Type mismatch\n");
-            }
-    }
-    | Expression MULEQUALS Expression {
-            if(($1.type == $3.type) && ($$.type == $1.type)){
-                if($$.type == TYPE_STRING)
-                    {
-                        printf("Type mismatch\n");
-                    }
-                    else{
-                        if($$.type == TYPE_INTEGER)
-                        {
-                            $1.integerValue=$1.integerValue * $3.integerValue;
-                            $$.integerValue=$1.integerValue;
-                        }
-                        else {
-                            if($$.type == TYPE_FLOAT)
-                            {
-                                $1.floatValue=$1.floatValue * $3.floatValue;
-                                $$.floatValue=$1.floatValue;
-                            }
-                        }
-                    }
-            }
-            else{
-                printf("Type mismatch\n");
-            }
-    }
-    | Expression DIVEQUALS Expression {
-            if($1.type == $3.type){
-                if($$.type == $1.type){
-                    if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
-                    {
-                        printf("Division on zero\n");
-                    }
-                    else
-                    {
-                        if($$.type == TYPE_STRING)
-                        {
-                            printf("Type mismatch\n");
-                        }
-                        else{
-                            if($$.type == TYPE_INTEGER)
-                            {
-                                $1.integerValue=$1.integerValue / $3.integerValue;
-                                $$.integerValue=$1.integerValue;
-                            }
-                            else {
-                                if($$.type == TYPE_FLOAT)
+                                $$.floatValue=pow($1.floatValue,$3.integerValue);
+
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                int cpt = 0;
+                                sprintf(buff, "%f", $1.floatValue);
+                                sprintf(buff2, "%f", $3.floatValue);
+                                while(cpt<$3.integerValue)
                                 {
-                                    $1.floatValue=$1.floatValue / $3.floatValue;
-                                    $$.floatValue=$1.floatValue;
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                    strcpy(buff, qcString);
+                                    qc++;
+                                    cpt++;
                                 }
+                                
                             }
                         }
                     }
-                }
-                else
-                {
-                    printf("Type mismatch\n");
-                }
             }
-            else
-            {
-                printf("Type mismatch\n");
-            }
-    }
-    | Expression MODEQUALS Expression {
-            if($1.type == $3.type){
-                if($$.type == $1.type){
-                    if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
-                    {
-                        printf("Division on zero\n");
-                    }
-                    else
-                    {
-                        if($$.type == TYPE_STRING)
-                        {
-                            printf("Type mismatch\n");
-                        }
-                        else{
-                            if($$.type == TYPE_INTEGER)
-                            {
-                                $1.integerValue=$1.integerValue % $3.integerValue;
-                                $$.integerValue=$1.integerValue;
-                            }
-                            else {
-                                if($$.type == TYPE_FLOAT)
-                                {
-                                    $1.floatValue=fmod($1.floatValue,$3.floatValue);
-                                    $$.floatValue=$1.floatValue;
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    printf("Type mismatch\n");
-                }
-            }
-            else
-            {
+            else{
                 printf("Type mismatch\n");
             }
     }
     | Expression LESS Expression {
             if($1.type == $3.type){
-                
                     $$.type=TYPE_BOOLEAN;
                         if($1.type == TYPE_STRING)
                         {
@@ -643,6 +639,14 @@ Expression:
                             else{
                                 $$.booleanValue=false;
                             }
+                            char buff[255];
+                            char buff2[255];
+                            char qcString[20];
+                            strcpy(buff, $1.stringValue);
+                            strcpy(buff2, $3.stringValue);
+                            sprintf(qcString, "%s%d", "R",qc);
+                            insererQuadreplet(q, "LT",buff, buff2,qcString, qc);
+                            qc++;
                         }
                         else{
                             if($1.type == TYPE_INTEGER)
@@ -654,6 +658,14 @@ Expression:
                                 else{
                                     $$.booleanValue=false;
                                 }
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%d", $1.integerValue);
+                                sprintf(buff2, "%d", $3.integerValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "LT",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             else {
                                 if($1.type == TYPE_FLOAT)
@@ -665,6 +677,14 @@ Expression:
                                     else{
                                         $$.booleanValue=false;
                                     }
+                                    char buff[255];
+                                    char buff2[255];
+                                    char qcString[20];
+                                    sprintf(buff, "%f", $1.floatValue);
+                                    sprintf(buff2, "%f", $3.floatValue);
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "LT",buff, buff2,qcString, qc);
+                                    qc++;
                                 }
                             }
                         }   
@@ -686,6 +706,14 @@ Expression:
                             else{
                                 $$.booleanValue=false;
                             }
+                            char buff[255];
+                            char buff2[255];
+                            char qcString[20];
+                            strcpy(buff, $1.stringValue);
+                            strcpy(buff2, $3.stringValue);
+                            sprintf(qcString, "%s%d", "R",qc);
+                            insererQuadreplet(q, "LTE",buff, buff2,qcString, qc);
+                            qc++;
                         }
                         else{
                             if($1.type == TYPE_INTEGER)
@@ -697,6 +725,14 @@ Expression:
                                 else{
                                     $$.booleanValue=false;
                                 }
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%d", $1.integerValue);
+                                sprintf(buff2, "%d", $3.integerValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "LTE",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             else {
                                 if($1.type == TYPE_FLOAT)
@@ -708,6 +744,14 @@ Expression:
                                     else{
                                         $$.booleanValue=false;
                                     }
+                                    char buff[255];
+                                    char buff2[255];
+                                    char qcString[20];
+                                    sprintf(buff, "%f", $1.floatValue);
+                                    sprintf(buff2, "%f", $3.floatValue);
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "LTE",buff, buff2,qcString, qc);
+                                    qc++;
                                 }
                             }
                         }   
@@ -729,6 +773,15 @@ Expression:
                             else{
                                 $$.booleanValue=false;
                             }
+                            char buff[255];
+                            char buff2[255];
+                            char qcString[20];
+                            strcpy(buff, $1.stringValue);
+                            strcpy(buff2, $3.stringValue);
+                            sprintf(qcString, "%s%d", "R",qc);
+                            insererQuadreplet(q, "GT",buff, buff2,qcString, qc);
+                            qc++;
+
                         }
                         else{
                             if($1.type == TYPE_INTEGER)
@@ -741,6 +794,14 @@ Expression:
                                 else{
                                     $$.booleanValue=false;
                                 }
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%d", $1.integerValue);
+                                sprintf(buff2, "%d", $3.integerValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "GT",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             else {
                                 if($1.type == TYPE_FLOAT)
@@ -752,6 +813,14 @@ Expression:
                                     else{
                                         $$.booleanValue=false;
                                     }
+                                    char buff[255];
+                                    char buff2[255];
+                                    char qcString[20];
+                                    sprintf(buff, "%f", $1.floatValue);
+                                    sprintf(buff2, "%f", $3.floatValue);
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "GT",buff, buff2,qcString, qc);
+                                    qc++;
                                 }
                             }
                         }   
@@ -773,6 +842,14 @@ Expression:
                             else{
                                 $$.booleanValue=false;
                             }
+                            char buff[255];
+                            char buff2[255];
+                            char qcString[20];
+                            strcpy(buff, $1.stringValue);
+                            strcpy(buff2, $3.stringValue);
+                            sprintf(qcString, "%s%d", "R",qc);
+                            insererQuadreplet(q, "GTE",buff, buff2,qcString, qc);
+                            qc++;
                         }
                         else{
                             if($1.type == TYPE_INTEGER)
@@ -784,6 +861,14 @@ Expression:
                                 else{
                                     $$.booleanValue=false;
                                 }
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%d", $1.integerValue);
+                                sprintf(buff2, "%d", $3.integerValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "GTE",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             else {
                                 if($1.type == TYPE_FLOAT)
@@ -795,6 +880,14 @@ Expression:
                                     else{
                                         $$.booleanValue=false;
                                     }
+                                    char buff[255];
+                                    char buff2[255];
+                                    char qcString[20];
+                                    sprintf(buff, "%f", $1.floatValue);
+                                    sprintf(buff2, "%f", $3.floatValue);
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    insererQuadreplet(q, "GTE",buff, buff2,qcString, qc);
+                                    qc++;
                                 }
                             }
                         }   
@@ -816,6 +909,14 @@ Expression:
                             else{
                                 $$.booleanValue=false;
                             }
+                            char buff[255];
+                            char buff2[255];
+                            char qcString[20];
+                            strcpy(buff, $1.stringValue);
+                            strcpy(buff2, $3.stringValue);
+                            sprintf(qcString, "%s%d", "R",qc);
+                            insererQuadreplet(q, "ET",buff, buff2,qcString, qc);
+                            qc++;
                         }
                         else{
                             if($1.type == TYPE_INTEGER)
@@ -827,6 +928,14 @@ Expression:
                                 else{
                                     $$.booleanValue=false;
                                 }
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%d", $1.integerValue);
+                                sprintf(buff2, "%d", $3.integerValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "ET",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             else {
                                 if($1.type == TYPE_FLOAT)
@@ -839,6 +948,14 @@ Expression:
                                         $$.booleanValue=false;
                                     }
                                 }
+                                char buff[255];
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(buff, "%f", $1.floatValue);
+                                sprintf(buff2, "%f", $3.floatValue);
+                                sprintf(qcString, "%s%d", "R",qc);
+                                insererQuadreplet(q, "ET",buff, buff2,qcString, qc);
+                                qc++;
                             }
                         }   
             }
@@ -848,6 +965,8 @@ Expression:
             }
     }
     | Expression AND Expression {
+        if($1.type == TYPE_BOOLEAN && $3.type == TYPE_BOOLEAN)
+        {
             if($1.booleanValue && $3.booleanValue)
             {
                 $$.booleanValue=true;
@@ -855,8 +974,23 @@ Expression:
             else{
                 $$.booleanValue=false;
             }
+            char buff[255];
+            char buff2[255];
+            char qcString[20];
+            strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+            strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+            sprintf(qcString, "%s%d", "R",qc);
+            insererQuadreplet(q, "AND",buff, buff2,qcString, qc);
+            qc++;
+        }
+        else
+        {
+            printf("Type missmatch\n");
+        }
     }
     | Expression OR Expression {
+        if($1.type == TYPE_BOOLEAN && $3.type == TYPE_BOOLEAN)
+        {
             if($1.booleanValue || $3.booleanValue)
             {
                 $$.booleanValue=true;
@@ -864,6 +998,20 @@ Expression:
             else{
                 $$.booleanValue=false;
             }
+            char buff[255];
+            char buff2[255];
+            char qcString[20];
+            strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+            strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+            sprintf(qcString, "%s%d", "R",qc);
+            insererQuadreplet(q, "OR",buff, buff2,qcString, qc);
+            qc++;
+        }
+        else
+        {
+            printf("Type missmatch\n");         
+        }
+
     }
 
     
@@ -937,11 +1085,11 @@ Declaration:
                 $$ = nouveauSymbole;
 
                 char buff[255];
-                strcpy(buff, $4.integerValue);
+                sprintf(buff, "%d", $4.integerValue);
                 insererQuadreplet(q, "BOUNDS","0", buff, "", qc);
                 qc++;
 
-                strcpy(buff, $4.integerValue);
+                sprintf(buff, "%d", $4.integerValue);
                 insererQuadreplet(q, "ADEC", $6, "", "", qc);
                 qc++;
             };
@@ -961,11 +1109,11 @@ Declaration:
                 $$ = nouveauSymbole;
 
                 char buff[255];
-                strcpy(buff, $5.integerValue);
+                sprintf(buff, "%d", $5.integerValue);
                 insererQuadreplet(q, "BOUNDS","0", buff, "", qc);
                 qc++;
 
-                strcpy(buff, $5.integerValue);
+                sprintf(buff, "%d", $5.integerValue);
                 insererQuadreplet(q, "ADEC", $7, "", "", qc);
                 qc++;
             };
