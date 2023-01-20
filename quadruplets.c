@@ -32,9 +32,11 @@ quad *insererQuadreplet(quad *p,char opr[],char op1[],char op2[],char res[],int 
     }
 }
 
+
 quad * ajouterQuadreplet(quad * q,quad * nouveauQuadreplet,int num){
     return insererQuadreplet(q,nouveauQuadreplet->operateur,nouveauQuadreplet->operande1,nouveauQuadreplet->operande2,nouveauQuadreplet->resultat,num);
 }   
+
 
 // mise a jour du quad numero qc dans le quad *(l'ensemble des quadreplets)
 quad *updateQuadreplet(quad *q, int qc,char num[30]){

@@ -126,8 +126,10 @@ symbole * tableSymboles = NULL;
 pile pile;
 quad * q;
 int qc = 1;
+
 int isForLoop = 0;
 quad * sauvAffectationFor;
+
 void yysuccess(char *s);
 void yyerror(const char *s);
 void showLexicalError();
@@ -983,9 +985,21 @@ Affectation:
                 char valeurString[255];
                 valeurToString($3,valeurString);
                 if($1.symbole->type < simpleToArrayOffset)
-                    setValeur($1.symbole, valeurString);
+
+                    {
+                        setValeur($1.symbole, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                        qc++;
+                    }
                 else
-                    setArrayElement($1.symbole, $1.index, valeurString);
+                    {
+                        setArrayElement($1.symbole, $1.index, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                        qc++;
+                    }
+
             }
         }
 
@@ -1003,9 +1017,22 @@ Affectation:
                     char valeurString[255];
 
                     if($1.symbole->type < simpleToArrayOffset)
-                        getValeur($1.symbole, valeurString);
+
+                        {
+                            getValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, "++", $1.symbole->nom, "", $1.symbole->nom, qc);
+                            qc++;
+                        
+                        }
                     else
-                        getArrayElement($1.symbole, $1.index, valeurString);
+                        {
+                            getArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, "++", $1.symbole->array->tabValeur[$1.index], "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
+
 
                     if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                         int valeur = atoi(valeurString);
@@ -1017,9 +1044,21 @@ Affectation:
                         sprintf(valeurString,"%.4f",valeur);
                     };
                     if($1.symbole->type < simpleToArrayOffset)
-                        setValeur($1.symbole, valeurString);
+
+                        {
+                            setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;
+                        }
                     else
-                        setArrayElement($1.symbole, $1.index, valeurString);
+                        {
+                            setArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
+
                 }
             }
         }
@@ -1037,9 +1076,21 @@ Affectation:
                     char valeurString[255];
                     
                     if($1.symbole->type < simpleToArrayOffset)
-                        getValeur($1.symbole, valeurString);
+
+                        {
+                            getValeur($1.symbole, valeurString);
+                            
+                            insererQuadreplet(q, "--", $1.symbole->nom, "", $1.symbole->nom, qc);
+                            qc++;
+                        }
                     else
-                        getArrayElement($1.symbole, $1.index, valeurString);
+                        {
+                            getArrayElement($1.symbole, $1.index, valeurString);
+                            
+                            insererQuadreplet(q, "--", $1.symbole->array->tabValeur[$1.index], "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
+
 
                     if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                         int valeur = atoi(valeurString);
@@ -1051,9 +1102,21 @@ Affectation:
                         sprintf(valeurString,"%.4f",valeur);
                     };
                     if($1.symbole->type < simpleToArrayOffset)
-                        setValeur($1.symbole, valeurString);
+
+                        {
+                            setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;
+                        }
                     else
-                        setArrayElement($1.symbole, $1.index, valeurString);
+                        {
+                            setArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "",$1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
+
                 }
             }
         }
@@ -1069,31 +1132,91 @@ Affectation:
                     char valeurString[255];
                     
                     if($1.symbole->type < simpleToArrayOffset)
-                        getValeur($1.symbole, valeurString);
+
+                        {
+                            getValeur($1.symbole, valeurString);
+
+                            
+                        }
                     else
-                        getArrayElement($1.symbole, $1.index, valeurString);
+                        {
+                            getArrayElement($1.symbole, $1.index, valeurString);
+                            
+                        }
 
                     if($1.symbole->type % simpleToArrayOffset == TYPE_STRING){
-                        strcat(valeurString,$3.stringValue);
+                        {
+                            strcat(valeurString,$3.stringValue);
+                            if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, $3.stringValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], $3.stringValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            }  
+                        }
+
                     }else if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                         int valeurExpression = $3.integerValue;
                         int valeur = atoi(valeurString);
                         int result = valeur + valeurExpression;
                         sprintf(valeurString, "%d", result);
+
+
+                        if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                     }else if($1.symbole->type % simpleToArrayOffset == TYPE_FLOAT){
                         double valeurExpression = $3.floatValue;
                         double valeur = atof(valeurString);
                         double result = valeur + valeurExpression;
                         sprintf(valeurString,"%.4f",result);
+
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
                     }else{
                         if($3.booleanValue){
                             strcpy(valeurString, "true");
+
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, "true", $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], "true", $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
                         };
                     };
                     if($1.symbole->type < simpleToArrayOffset)
-                        setValeur($1.symbole, valeurString);
+                        {
+                            setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;
+                        }
                     else
-                        setArrayElement($1.symbole, $1.index, valeurString);
+                        {
+                            setArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
+
                 }
             }
         }
@@ -1114,25 +1237,61 @@ Affectation:
                     char valeurString[255];
                     
                     if($1.symbole->type < simpleToArrayOffset)
-                        getValeur($1.symbole, valeurString);
+
+                        {
+                            getValeur($1.symbole, valeurString);
+
+                        }
                     else
-                        getArrayElement($1.symbole, $1.index, valeurString);
+                        {
+                            getArrayElement($1.symbole, $1.index, valeurString);
+
+
+                        }
+
 
                     if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                         int valeurExpression = $3.integerValue;
                         int valeur = atoi(valeurString);
                         int result = valeur - valeurExpression;
                         sprintf(valeurString, "%d", result);
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "-=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "-=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                     }else{
                         double valeurExpression = $3.floatValue;
                         double valeur = atof(valeurString);
                         double result = valeur - valeurExpression;
                         sprintf(valeurString,"%.4f",result);
+
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "-=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "-=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
                     };
                     if($1.symbole->type < simpleToArrayOffset)
-                        setValeur($1.symbole, valeurString);
-                    else
+                        {setValeur($1.symbole, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                        qc++;}
+                    else{
                         setArrayElement($1.symbole, $1.index, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                        qc++;}
+
                     }
                 }
             }
@@ -1155,20 +1314,46 @@ Affectation:
                     char valeurString[255];
                     
                     if($1.symbole->type < simpleToArrayOffset)
-                        getValeur($1.symbole, valeurString);
-                    else
+
+                        {
+                            getValeur($1.symbole, valeurString);
+                        }
+                    else{
                         getArrayElement($1.symbole, $1.index, valeurString);
+                    }
+
 
                     if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                         int valeurExpression = $3.integerValue;
                         int valeur = atoi(valeurString);
                         int result = valeur * valeurExpression;
                         sprintf(valeurString, "%d", result);
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "*=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                     }else if($1.symbole->type % simpleToArrayOffset == TYPE_FLOAT){
                         double valeurExpression = $3.floatValue;
                         double valeur = atof(valeurString);
                         double result = valeur * valeurExpression;
                         sprintf(valeurString,"%.4f",result);
+
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "*=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                     }else{
                         if($3.booleanValue){
                             if($1.symbole->type < simpleToArrayOffset){
@@ -1180,13 +1365,31 @@ Affectation:
                                     strcpy(valeurString, "false");
                                 };
                             };
+
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "*=", $1.symbole->nom, $3.booleanValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.booleanValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                         };
                         
                     };
                     if($1.symbole->type < simpleToArrayOffset)
-                        setValeur($1.symbole, valeurString);
+
+                        {setValeur($1.symbole, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                        qc++;}
                     else
-                        setArrayElement($1.symbole, $1.index, valeurString);
+                        {setArrayElement($1.symbole, $1.index, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                        qc++;}
+
                     }
                 }
             }
@@ -1208,25 +1411,61 @@ Affectation:
                         char valeurString[255];
 
                         if($1.symbole->type < simpleToArrayOffset)
-                            getValeur($1.symbole, valeurString);
-                        else
+
+                            
+                            {
+                                getValeur($1.symbole, valeurString);
+
+                            }
+                        else{
                             getArrayElement($1.symbole, $1.index, valeurString);
+                            
+                        }
+
 
                         if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                             int valeurExpression = $3.integerValue;
                             int valeur = atoi(valeurString);
                             int result = valeur / valeurExpression;
                             sprintf(valeurString, "%d", result);
+
+
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "/=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "/=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                         }else {
                             double valeurExpression = $3.floatValue;
                             double valeur = atof(valeurString);
                             double result = valeur / valeurExpression;
                             sprintf(valeurString,"%.4f",result);
+
+
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "/=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "/=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
                         };
                         if($1.symbole->type < simpleToArrayOffset)
-                            setValeur($1.symbole, valeurString);
+                            {setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;}
                         else
-                            setArrayElement($1.symbole, $1.index, valeurString);
+                            {setArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;}
+
                     }
                 }
             }
@@ -1246,20 +1485,45 @@ Affectation:
 
                         char valeurString[255];
                         
-                        if($1.symbole->type < simpleToArrayOffset)
+
+                        if($1.symbole->type < simpleToArrayOffset){
                             getValeur($1.symbole, valeurString);
-                        else
+
+                            }
+                        else{
                             getArrayElement($1.symbole, $1.index, valeurString);
+                            }
+
 
                         int valeurExpression = $3.integerValue;
                         int valeur = atoi(valeurString);
                         int result = valeur % valeurExpression;
                         sprintf(valeurString, "%d", result);
 
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "%=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "%=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                         if($1.symbole->type < simpleToArrayOffset)
-                            setValeur($1.symbole, valeurString);
+                            {
+                                setValeur($1.symbole, valeurString);
+
+                                insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                                qc++;
+                            }
                         else
-                            setArrayElement($1.symbole, $1.index, valeurString);
+                            {
+                                setArrayElement($1.symbole, $1.index, valeurString);
+
+                                insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            }
                     }
                 }
             }
