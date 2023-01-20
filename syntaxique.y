@@ -16,7 +16,6 @@
 #include "tableSymboles.h"
 #include "quadruplets.h"
 #include "pile.h"
-#include "list.h"
 }
 
 %union{
@@ -124,12 +123,12 @@ int currentColumn = 1;
 
 symbole * tableSymboles = NULL;
 
-pile * stack;
+pile pile;
 quad * q;
 int qc = 1;
 
-bool isForLoop = false;
-qFifo * quadFifo;
+int isForLoop = 0;
+quad * sauvAffectationFor;
 
 void yysuccess(char *s);
 void yyerror(const char *s);
@@ -155,7 +154,11 @@ Expression:
     | Variable {
         if($1.symbole != NULL){
             char valeurString[255];
+            char nameString[255];
+            $$.isVariable = true;
             if($1.symbole->type < simpleToArrayOffset){
+                getNom($1.symbole, nameString);
+                strcpy($$.nameVariable, nameString);
                 getValeur($1.symbole, valeurString);
                 switch ($1.symbole->type){
                     case TYPE_INTEGER:
@@ -163,7 +166,7 @@ Expression:
                         $$.type = TYPE_INTEGER;
                         break;
                     case TYPE_FLOAT:
-                        $$.integerValue = atof(valeurString);
+                        $$.floatValue = atof(valeurString);
                         $$.type = TYPE_FLOAT;
                         break;
                     case TYPE_STRING:
@@ -178,6 +181,8 @@ Expression:
                         $$.type = -1;
                         break;
                     }}else{
+                        getNom($1.symbole,nameString);
+                        sprintf($$.nameVariable,"%s%s%d%s",nameString,"[",$1.index,"]");
                         getArrayElement($1.symbole, $1.index, valeurString);
                         switch ($1.symbole->type){
                             case TYPE_ARRAY_BOOLEAN:
@@ -216,7 +221,7 @@ Expression:
                 char qcString[20];
                 strcpy(buff, ($2.booleanValue == true) ? "true" : "false");
                 sprintf(qcString, "%s%d", "R",qc);
-                insererQuadreplet(&q, "NEG","", buff, "", qc);
+                insererQuadreplet(q, "NEG","", buff, "", qc);
                 qc++;
             }
             else
@@ -236,7 +241,7 @@ Expression:
                     char qcString[20];
                     sprintf(buff, "%d", $2.integerValue);
                     sprintf(qcString, "%s%d", "R",qc);
-                    insererQuadreplet(&q, "SUB","0", buff, "", qc);
+                    insererQuadreplet(q, "SUB","0", buff, "", qc);
                     qc++;
                 }
                 else
@@ -250,7 +255,7 @@ Expression:
                         char qcString[20];
                         sprintf(buff, "%f", $2.floatValue);
                         sprintf(qcString, "%s%d", "R",qc);
-                        insererQuadreplet(&q, "SUB","0", buff, "", qc);
+                        insererQuadreplet(q, "SUB","0", buff, "", qc);
                         qc++;
                     }
                 }
@@ -289,7 +294,30 @@ Expression:
 
                         char qcString[20];
                         sprintf(qcString, "%s%d", "R",qc);
-                        insererQuadreplet(&q, "ADD",$1.stringValue, $3.stringValue, qcString, qc);
+                        strcpy($$.nameVariable,qcString);
+                        $$.isVariable=true;
+                        if($1.isVariable == true & $3.isVariable == true)
+                        {
+                            insererQuadreplet(q, "ADD",$1.nameVariable, $3.nameVariable, qcString, qc);
+                        }
+                        else
+                        {
+                            if($1.isVariable == true)
+                            {
+                                insererQuadreplet(q, "ADD",$1.nameVariable, $3.stringValue, qcString, qc);
+                            }
+                            else
+                            {
+                                if($3.isVariable == true)
+                                {
+                                    insererQuadreplet(q, "ADD",$1.stringValue, $3.nameVariable, qcString, qc);
+                                }
+                                else
+                                {
+                                    insererQuadreplet(q, "ADD",$1.stringValue, $3.stringValue, qcString, qc);
+                                }
+                            }
+                        }
                         qc++;
                     }
                     else{
@@ -300,10 +328,35 @@ Expression:
                             char buff[255];
                             char buff2[255];
                             char qcString[20];
-                            sprintf(buff, "%d", $1.integerValue);
-                            sprintf(buff2, "%d", $3.integerValue);
                             sprintf(qcString, "%s%d", "R",qc);
-                            insererQuadreplet(&q, "ADD",buff, buff2,qcString, qc);
+                            strcpy($$.nameVariable,qcString);
+                            $$.isVariable=true;
+                            if($1.isVariable == true & $3.isVariable == true)
+                            {
+                                insererQuadreplet(q, "ADD",$1.nameVariable, $3.nameVariable, qcString, qc);
+                            }
+                            else
+                            {
+                                if($1.isVariable == true)
+                                {
+                                    sprintf(buff2, "%d", $3.integerValue);
+                                    insererQuadreplet(q, "ADD",$1.nameVariable, buff2, qcString, qc);
+                                }
+                                else
+                                {
+                                    if($3.isVariable == true)
+                                    {
+                                        sprintf(buff, "%d", $1.integerValue);
+                                        insererQuadreplet(q, "ADD",buff, $3.nameVariable, qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        sprintf(buff, "%d", $1.integerValue);
+                                        sprintf(buff2, "%d", $3.integerValue);
+                                        insererQuadreplet(q, "ADD",buff, buff2,qcString, qc);
+                                    }
+                                }
+                            }
                             qc++;
                         }
                         else {
@@ -314,10 +367,35 @@ Expression:
                                 char buff[255];
                                 char buff2[255];
                                 char qcString[20];
-                                sprintf(buff, "%f", $1.floatValue);
-                                sprintf(buff2, "%f", $3.floatValue);
                                 sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "ADD",buff, buff2,qcString, qc);
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true & $3.isVariable == true)
+                                {
+                                    insererQuadreplet(q, "ADD",$1.nameVariable, $3.nameVariable, qcString, qc);
+                                }
+                                else
+                                {
+                                    if($1.isVariable == true)
+                                    {
+                                        sprintf(buff2, "%f", $3.floatValue);
+                                        insererQuadreplet(q, "ADD",$1.nameVariable, buff2, qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($3.isVariable == true)
+                                        {
+                                            sprintf(buff, "%f", $1.floatValue);
+                                            insererQuadreplet(q, "ADD",buff, $3.nameVariable, qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            sprintf(buff, "%f", $1.floatValue);
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            insererQuadreplet(q, "ADD",buff, buff2,qcString, qc);
+                                        }
+                                    }
+                                }
                                 qc++;
                             }
                             else
@@ -337,10 +415,35 @@ Expression:
                                     char buff[255];
                                     char buff2[255];
                                     char qcString[20];
-                                    strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
-                                    strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
                                     sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "ADD",buff, buff2,qcString, qc);
+                                    strcpy($$.nameVariable,qcString);
+                                    $$.isVariable=true;
+                                    if($1.isVariable == true & $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "ADD",$1.nameVariable, $3.nameVariable, qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable == true)
+                                        {
+                                            strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                                            insererQuadreplet(q, "ADD",$1.nameVariable, buff2, qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable == true)
+                                            {
+                                                strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+                                                insererQuadreplet(q, "ADD",buff, $3.nameVariable, qcString, qc);
+                                            }
+                                            else
+                                            {
+                                                strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+                                                strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                                                insererQuadreplet(q, "ADD",buff, buff2,qcString, qc);
+                                            }
+                                        }
+                                    }
                                     qc++;
                                 }
                             }
@@ -362,26 +465,78 @@ Expression:
                         if($1.type == TYPE_INTEGER)
                         {
                             $$.integerValue=$1.integerValue-$3.integerValue;
+
                             char buff[255];
                             char buff2[255];
                             char qcString[20];
-                            sprintf(buff, "%d", $1.integerValue);
-                            sprintf(buff2, "%d", $3.integerValue);
                             sprintf(qcString, "%s%d", "R",qc);
-                            insererQuadreplet(&q, "sub",buff, buff2,qcString, qc);
+                            strcpy($$.nameVariable,qcString);
+                            $$.isVariable=true;
+                            if($1.isVariable == true & $3.isVariable == true)
+                            {
+                                insererQuadreplet(q, "SUB",$1.nameVariable, $3.nameVariable, qcString, qc);
+                            }
+                            else
+                            {
+                                if($1.isVariable == true)
+                                {
+                                    sprintf(buff2, "%d", $3.integerValue);
+                                    insererQuadreplet(q, "SUB",$1.nameVariable, buff2, qcString, qc);
+                                }
+                                else
+                                {
+                                    if($3.isVariable == true)
+                                    {
+                                        sprintf(buff, "%d", $1.integerValue);
+                                        insererQuadreplet(q, "SUB",buff, $3.nameVariable, qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        sprintf(buff, "%d", $1.integerValue);
+                                        sprintf(buff2, "%d", $3.integerValue);
+                                        insererQuadreplet(q, "SUB",buff, buff2,qcString, qc);
+                                    }
+                                }
+                            }
                             qc++;
                         }
                         else {
                             if($1.type == TYPE_FLOAT)
                             {
                                 $$.floatValue=$1.floatValue-$3.floatValue;
+
                                 char buff[255];
                                 char buff2[255];
                                 char qcString[20];
-                                sprintf(buff, "%f", $1.floatValue);
-                                sprintf(buff2, "%f", $3.floatValue);
                                 sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "SUB",buff, buff2,qcString, qc);
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true & $3.isVariable == true)
+                                {
+                                    insererQuadreplet(q, "SUB",$1.nameVariable, $3.nameVariable, qcString, qc);
+                                }
+                                else
+                                {
+                                    if($1.isVariable == true)
+                                    {
+                                        sprintf(buff2, "%f", $3.floatValue);
+                                        insererQuadreplet(q, "SUB",$1.nameVariable, buff2, qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($3.isVariable == true)
+                                        {
+                                            sprintf(buff, "%f", $1.floatValue);
+                                            insererQuadreplet(q, "SUB",buff, $3.nameVariable, qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            sprintf(buff, "%f", $1.floatValue);
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            insererQuadreplet(q, "SUB",buff, buff2,qcString, qc);
+                                        }
+                                    }
+                                }
                                 qc++;
                             }
                         }
@@ -406,10 +561,35 @@ Expression:
                             char buff[255];
                             char buff2[255];
                             char qcString[20];
-                            sprintf(buff, "%d", $1.integerValue);
-                            sprintf(buff2, "%d", $3.integerValue);
                             sprintf(qcString, "%s%d", "R",qc);
-                            insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
+                            strcpy($$.nameVariable,qcString);
+                            $$.isVariable=true;
+                            if($1.isVariable == true & $3.isVariable == true)
+                            {
+                                insererQuadreplet(q, "MUL",$1.nameVariable, $3.nameVariable, qcString, qc);
+                            }
+                            else
+                            {
+                                if($1.isVariable == true)
+                                {
+                                    sprintf(buff2, "%d", $3.integerValue);
+                                    insererQuadreplet(q, "MUL",$1.nameVariable, buff2, qcString, qc);
+                                }
+                                else
+                                {
+                                    if($3.isVariable == true)
+                                    {
+                                        sprintf(buff, "%d", $1.integerValue);
+                                        insererQuadreplet(q, "MUL",buff, $3.nameVariable, qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        sprintf(buff, "%d", $1.integerValue);
+                                        sprintf(buff2, "%d", $3.integerValue);
+                                        insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                    }
+                                }
+                            }
                             qc++;
                         }
                         else {
@@ -420,10 +600,35 @@ Expression:
                                 char buff[255];
                                 char buff2[255];
                                 char qcString[20];
-                                sprintf(buff, "%f", $1.floatValue);
-                                sprintf(buff2, "%f", $3.floatValue);
                                 sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true & $3.isVariable == true)
+                                {
+                                    insererQuadreplet(q, "MUL",$1.nameVariable, $3.nameVariable, qcString, qc);
+                                }
+                                else
+                                {
+                                    if($1.isVariable == true)
+                                    {
+                                        sprintf(buff2, "%f", $3.floatValue);
+                                        insererQuadreplet(q, "MUL",$1.nameVariable, buff2, qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($3.isVariable == true)
+                                        {
+                                            sprintf(buff, "%f", $1.floatValue);
+                                            insererQuadreplet(q, "MUL",buff, $3.nameVariable, qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            sprintf(buff, "%f", $1.floatValue);
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                        }
+                                    }
+                                }
                                 qc++;
                             }
                             else
@@ -439,13 +644,39 @@ Expression:
                                     {
                                         $$.booleanValue=false;
                                     };
+
                                     char buff[255];
                                     char buff2[255];
                                     char qcString[20];
-                                    strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
-                                    strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
                                     sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
+                                    strcpy($$.nameVariable,qcString);
+                                    $$.isVariable=true;
+                                    if($1.isVariable == true & $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "MUL",$1.nameVariable, $3.nameVariable, qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable == true)
+                                        {
+                                            strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                                            insererQuadreplet(q, "MUL",$1.nameVariable, buff2, qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable == true)
+                                            {
+                                                strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+                                                insererQuadreplet(q, "MUL",buff, $3.nameVariable, qcString, qc);
+                                            }
+                                            else
+                                            {
+                                                strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+                                                strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                                                insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                            }
+                                        }
+                                    }
                                     qc++;
                                 }
                             }
@@ -474,24 +705,74 @@ Expression:
                             {
                                 $$.integerValue=$1.integerValue % $3.integerValue;
 
-                                char buff[255];
-                                char buff2[255];
-                                char qcString[20];
-                                sprintf(buff, "%d", $1.integerValue);
-                                sprintf(buff2, "%d", $3.integerValue);
-                                sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "DIV",buff, buff2,qcString, qc);
-                                qc++;
-                                strcpy(buff, qcString);
-                                sprintf(buff2, "%d", $3.integerValue);
-                                sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
-                                qc++;
-                                sprintf(buff, "%d", $1.integerValue);
-                                strcpy(buff2, qcString);
-                                sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "SUB",buff, buff2,qcString, qc);
-                                qc++;
+                                    char buff[255];
+                                    char buff2[255];
+                                    char qcString[20];
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    strcpy($$.nameVariable,qcString);
+                                    $$.isVariable=true;
+                                    if($1.isVariable == true && $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "DIV",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        qc++;
+                                        sprintf(qcString, "%s%d", "R",qc);
+                                        insererQuadreplet(q, "MUL",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        qc++;
+                                        sprintf(qcString, "%s%d", "R",qc);
+                                        insererQuadreplet(q, "SUB",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        qc++;
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable == true)
+                                        {
+                                            sprintf(buff2, "%d", $3.integerValue);
+                                            insererQuadreplet(q, "DIV",$1.nameVariable, buff2,qcString, qc);
+                                            qc++;
+                                            sprintf(buff2, "%d", $3.integerValue);
+                                            sprintf(qcString, "%s%d", "R",qc);
+                                            insererQuadreplet(q, "MUL",$1.nameVariable, buff2,qcString, qc);
+                                            qc++;
+                                            strcpy(buff2, qcString);
+                                            sprintf(qcString, "%s%d", "R",qc);
+                                            insererQuadreplet(q, "SUB",$1.nameVariable, buff2,qcString, qc);
+                                            qc++;
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable == true)
+                                            {
+                                                sprintf(buff, "%d", $1.integerValue);
+                                                insererQuadreplet(q, "DIV",buff, $3.nameVariable,qcString, qc);
+                                                qc++;
+                                                strcpy(buff, qcString);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                insererQuadreplet(q, "MUL",buff, $3.nameVariable,qcString, qc);
+                                                qc++;
+                                                sprintf(buff, "%d", $1.integerValue);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                insererQuadreplet(q, "SUB",buff, $3.nameVariable,qcString, qc);
+                                                qc++;
+                                            }
+                                            else
+                                            {
+                                                sprintf(buff, "%d", $1.integerValue);
+                                                sprintf(buff2, "%d", $3.integerValue);
+                                                insererQuadreplet(q, "DIV",buff, buff2,qcString, qc);
+                                                qc++;
+                                                strcpy(buff, qcString);
+                                                sprintf(buff2, "%d", $3.integerValue);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                                qc++;
+                                                sprintf(buff, "%d", $1.integerValue);
+                                                strcpy(buff2, qcString);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                insererQuadreplet(q, "SUB",buff, buff2,qcString, qc);
+                                                qc++;
+                                            }
+                                        }
+                                    }
                             }
                             else {
                                 if($$.type == TYPE_FLOAT)
@@ -501,21 +782,71 @@ Expression:
                                     char buff[255];
                                     char buff2[255];
                                     char qcString[20];
-                                    sprintf(buff, "%f", $1.floatValue);
-                                    sprintf(buff2, "%f", $3.floatValue);
                                     sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "DIV",buff, buff2,qcString, qc);
-                                    qc++;
-                                    strcpy(buff, qcString);
-                                    sprintf(buff2, "%f", $3.floatValue);
-                                    sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
-                                    qc++;
-                                    sprintf(buff, "%f", $1.floatValue);
-                                    strcpy(buff2, qcString);
-                                    sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "SUB",buff, buff2,qcString, qc);
-                                    qc++;
+                                    strcpy($$.nameVariable,qcString);
+                                    $$.isVariable=true;
+                                    if($1.isVariable == true && $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "DIV",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        qc++;
+                                        sprintf(qcString, "%s%d", "R",qc);
+                                        insererQuadreplet(q, "MUL",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        qc++;
+                                        sprintf(qcString, "%s%d", "R",qc);
+                                        insererQuadreplet(q, "SUB",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        qc++;
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable == true)
+                                        {
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            insererQuadreplet(q, "DIV",$1.nameVariable, buff2,qcString, qc);
+                                            qc++;
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            sprintf(qcString, "%s%d", "R",qc);
+                                            insererQuadreplet(q, "MUL",$1.nameVariable, buff2,qcString, qc);
+                                            qc++;
+                                            strcpy(buff2, qcString);
+                                            sprintf(qcString, "%s%d", "R",qc);
+                                            insererQuadreplet(q, "SUB",$1.nameVariable, buff2,qcString, qc);
+                                            qc++;
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable == true)
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                insererQuadreplet(q, "DIV",buff, $3.nameVariable,qcString, qc);
+                                                qc++;
+                                                strcpy(buff, qcString);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                insererQuadreplet(q, "MUL",buff, $3.nameVariable,qcString, qc);
+                                                qc++;
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                insererQuadreplet(q, "SUB",buff, $3.nameVariable,qcString, qc);
+                                                qc++;
+                                            }
+                                            else
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                sprintf(buff2, "%f", $3.floatValue);
+                                                insererQuadreplet(q, "DIV",buff, buff2,qcString, qc);
+                                                qc++;
+                                                strcpy(buff, qcString);
+                                                sprintf(buff2, "%f", $3.floatValue);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                                qc++;
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                strcpy(buff2, qcString);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                insererQuadreplet(q, "SUB",buff, buff2,qcString, qc);
+                                                qc++;
+                                            }
+                                        }
+                                    }   
                                 }
                             }
                         }
@@ -546,24 +877,82 @@ Expression:
                                 char buff[255];
                                 char buff2[255];
                                 char qcString[20];
-                                sprintf(buff, "%d", $1.integerValue);
-                                sprintf(buff2, "%d", $3.integerValue);
                                 sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "DIV",buff, buff2,qcString, qc);
-                                qc++;
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true && $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "DIV",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        qc++;
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable == true)
+                                        {
+                                            sprintf(buff2, "%d", $3.integerValue);
+                                            insererQuadreplet(q, "DIV",$1.nameVariable, buff2,qcString, qc);
+                                            qc++;
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable == true)
+                                            {
+                                                sprintf(buff, "%d", $1.integerValue);
+                                                insererQuadreplet(q, "DIV",buff, $3.nameVariable,qcString, qc);
+                                                qc++;
+                                            }
+                                            else
+                                            {
+                                                sprintf(buff, "%d", $1.integerValue);
+                                                sprintf(buff2, "%d", $3.integerValue);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                insererQuadreplet(q, "DIV",buff, buff2,qcString, qc);
+                                                qc++;   
+                                            }
+                                        }
+                                    }
+                                
                             }
                             else {
                                 if($1.type == TYPE_FLOAT)
                                 {
                                     $$.floatValue=$1.floatValue / $3.floatValue;
-                                    char buff[255];
-                                    char buff2[255];
-                                    char qcString[20];
-                                    sprintf(buff, "%f", $1.floatValue);
-                                    sprintf(buff2, "%f", $3.floatValue);
-                                    sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "DIV",buff, buff2,qcString, qc);
-                                    qc++;
+                                char buff2[255];
+                                char qcString[20];
+                                sprintf(qcString, "%s%d", "R",qc);
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true && $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "DIV",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        qc++;
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable == true)
+                                        {
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            insererQuadreplet(q, "DIV",$1.nameVariable, buff2,qcString, qc);
+                                            qc++;
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable == true)
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                insererQuadreplet(q, "DIV",buff, $3.nameVariable,qcString, qc);
+                                                qc++;
+                                            }
+                                            else
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                sprintf(buff2, "%f", $3.floatValue);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                insererQuadreplet(q, "DIV",buff, buff2,qcString, qc);
+                                                qc++;   
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -588,16 +977,64 @@ Expression:
                             char buff2[255];
                             char qcString[20];
                             int cpt = 0;
-                            sprintf(buff, "%d", $1.integerValue);
-                            sprintf(buff2, "%d", $3.integerValue);
-                            while(cpt<$3.integerValue)
-                            {
-                                sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
-                                strcpy(buff, qcString);
-                                qc++;
-                                cpt++;
-                            }
+                            sprintf(qcString, "%s%d", "R",qc);
+                            strcpy($$.nameVariable,qcString);
+                            $$.isVariable=true;
+                            if($1.isVariable == true && $3.isVariable == true)
+                                    {
+                                        while(cpt<$3.integerValue)
+                                        {
+                                            insererQuadreplet(q, "MUL",$1.nameVariable, $3.nameVariable, qc);
+                                            strcpy(buff, qcString);
+                                            qc++;
+                                            sprintf(qcString, "%s%d", "R",qc);
+                                            cpt++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable == true)
+                                        {
+                                            sprintf(buff2, "%d", $3.integerValue);
+                                            while(cpt<$3.integerValue)
+                                            {
+                                                insererQuadreplet(q, "MUL",$1.nameVariable, buff2,qcString, qc);
+                                                strcpy(buff, qcString);
+                                                qc++;
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                cpt++;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable == true)
+                                            {
+                                                sprintf(buff, "%d", $1.integerValue);
+                                                while(cpt<$3.integerValue)
+                                                {
+                                                    insererQuadreplet(q, "MUL",buff, $3.nameVariable,qcString, qc);
+                                                    strcpy(buff, qcString);
+                                                    qc++;
+                                                    sprintf(qcString, "%s%d", "R",qc);
+                                                    cpt++;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                sprintf(buff, "%d", $1.integerValue);
+                                                sprintf(buff2, "%d", $3.integerValue);
+                                                while(cpt<$3.integerValue)
+                                                {
+                                                    insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                                    strcpy(buff, qcString);
+                                                    qc++;
+                                                    sprintf(qcString, "%s%d", "R",qc);
+                                                    cpt++;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
                             
                         }
                         else {
@@ -609,19 +1046,67 @@ Expression:
                                 char buff2[255];
                                 char qcString[20];
                                 int cpt = 0;
-                                sprintf(buff, "%f", $1.floatValue);
-                                sprintf(buff2, "%f", $3.floatValue);
-                                while(cpt<$3.integerValue)
-                                {
-                                    sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
-                                    strcpy(buff, qcString);
-                                    qc++;
-                                    cpt++;
+                                sprintf(qcString, "%s%d", "R",qc);
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true && $3.isVariable == true)
+                                        {
+                                            while(cpt<$3.integerValue)
+                                            {
+                                                
+                                                insererQuadreplet(q, "MUL",$1.nameVariable, $3.nameVariable, qc);
+                                                strcpy(buff, qcString);
+                                                qc++;
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                cpt++;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if($1.isVariable == true)
+                                            {
+                                                sprintf(buff2, "%d", $3.integerValue);
+                                                while(cpt<$3.integerValue)
+                                                {
+                                                    insererQuadreplet(q, "MUL",$1.nameVariable, buff2,qcString, qc);
+                                                    strcpy(buff, qcString);
+                                                    qc++;
+                                                    sprintf(qcString, "%s%d", "R",qc);
+                                                    cpt++;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if($3.isVariable == true)
+                                                {
+                                                    sprintf(buff, "%d", $1.floatValue);
+                                                    while(cpt<$3.integerValue)
+                                                    {
+                                                        insererQuadreplet(q, "MUL",buff, $3.nameVariable,qcString, qc);
+                                                        strcpy(buff, qcString);
+                                                        qc++;
+                                                        sprintf(qcString, "%s%d", "R",qc);
+                                                        cpt++;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    sprintf(buff, "%d", $1.floatValue);
+                                                    sprintf(buff2, "%d", $3.integerValue);
+                                                    while(cpt<$3.integerValue)
+                                                    {
+                                                        insererQuadreplet(q, "MUL",buff, buff2,qcString, qc);
+                                                        strcpy(buff, qcString);
+                                                        qc++;
+                                                        sprintf(qcString, "%s%d", "R",qc);
+                                                        cpt++;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    
                                 }
-                                
                             }
-                        }
                     }
             }
             else{
@@ -643,10 +1128,35 @@ Expression:
                             char buff[255];
                             char buff2[255];
                             char qcString[20];
-                            strcpy(buff, $1.stringValue);
-                            strcpy(buff2, $3.stringValue);
                             sprintf(qcString, "%s%d", "R",qc);
-                            insererQuadreplet(&q, "LT",buff, buff2,qcString, qc);
+                            strcpy($$.nameVariable,qcString);
+                            $$.isVariable=true;
+                            if($1.isVariable == true && $3.isVariable == true)
+                            {
+                                insererQuadreplet(q, "LT",$1.nameVariable, $2.nameVariable,qcString, qc);
+                            }
+                            else
+                            {
+                                if($1.isVariable==true)
+                                {
+                                    strcpy(buff2, $3.stringValue);
+                                    insererQuadreplet(q, "LT",$1.nameVariable, buff2,qcString, qc);
+                                }
+                                else
+                                {
+                                    if($3.isVariable==true)
+                                    {
+                                        strcpy(buff, $1.stringValue);
+                                        insererQuadreplet(q, "LT",buff, $3.nameVariable,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        strcpy(buff, $1.stringValue);
+                                        strcpy(buff2, $3.stringValue);
+                                        insererQuadreplet(q, "LT",buff, buff2,qcString, qc);
+                                    }
+                                }
+                            }
                             qc++;
                         }
                         else{
@@ -662,10 +1172,35 @@ Expression:
                                 char buff[255];
                                 char buff2[255];
                                 char qcString[20];
-                                sprintf(buff, "%d", $1.integerValue);
-                                sprintf(buff2, "%d", $3.integerValue);
                                 sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "LT",buff, buff2,qcString, qc);
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true && $3.isVariable == true)
+                                {
+                                    insererQuadreplet(q, "LT",$1.nameVariable, $2.nameVariable,qcString, qc);
+                                }
+                                else
+                                {
+                                    if($1.isVariable==true)
+                                    {
+                                        sprintf(buff2, "%d", $3.integerValue);
+                                        insererQuadreplet(q, "LT",$1.nameVariable, buff2,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($3.isVariable==true)
+                                        {
+                                            sprintf(buff, "%d", $1.integerValue);
+                                            insererQuadreplet(q, "LT",buff, $3.nameVariable,qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            sprintf(buff, "%d", $1.integerValue);
+                                            sprintf(buff2, "%d", $3.integerValue);
+                                            insererQuadreplet(q, "LT",buff, buff2,qcString, qc);
+                                        }
+                                    }
+                                }
                                 qc++;
                             }
                             else {
@@ -681,10 +1216,35 @@ Expression:
                                     char buff[255];
                                     char buff2[255];
                                     char qcString[20];
-                                    sprintf(buff, "%f", $1.floatValue);
-                                    sprintf(buff2, "%f", $3.floatValue);
                                     sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "LT",buff, buff2,qcString, qc);
+                                    strcpy($$.nameVariable,qcString);
+                                    $$.isVariable=true;
+                                    if($1.isVariable == true && $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "LT",$1.nameVariable, $2.nameVariable,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable==true)
+                                        {
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            insererQuadreplet(q, "LT",$1.nameVariable, buff2,qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable==true)
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                insererQuadreplet(q, "LT",buff, $3.nameVariable,qcString, qc);
+                                            }
+                                            else
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                sprintf(buff2, "%f", $3.floatValue);
+                                                insererQuadreplet(q, "LT",buff, buff2,qcString, qc);
+                                            }
+                                        }
+                                    }
                                     qc++;
                                 }
                             }
@@ -710,10 +1270,35 @@ Expression:
                             char buff[255];
                             char buff2[255];
                             char qcString[20];
-                            strcpy(buff, $1.stringValue);
-                            strcpy(buff2, $3.stringValue);
                             sprintf(qcString, "%s%d", "R",qc);
-                            insererQuadreplet(&q, "LTE",buff, buff2,qcString, qc);
+                            strcpy($$.nameVariable,qcString);
+                            $$.isVariable=true;
+                            if($1.isVariable == true && $3.isVariable == true)
+                            {
+                                insererQuadreplet(q, "LTE",$1.nameVariable, $2.nameVariable,qcString, qc);
+                            }
+                            else
+                            {
+                                if($1.isVariable==true)
+                                {
+                                    strcpy(buff2, $3.stringValue);
+                                    insererQuadreplet(q, "LTE",$1.nameVariable, buff2,qcString, qc);
+                                }
+                                else
+                                {
+                                    if($3.isVariable==true)
+                                    {
+                                        strcpy(buff, $1.stringValue);
+                                        insererQuadreplet(q, "LTE",buff, $3.nameVariable,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        strcpy(buff, $1.stringValue);
+                                        strcpy(buff2, $3.stringValue);
+                                        insererQuadreplet(q, "LTE",buff, buff2,qcString, qc);
+                                    }
+                                }
+                            }
                             qc++;
                         }
                         else{
@@ -729,10 +1314,35 @@ Expression:
                                 char buff[255];
                                 char buff2[255];
                                 char qcString[20];
-                                sprintf(buff, "%d", $1.integerValue);
-                                sprintf(buff2, "%d", $3.integerValue);
                                 sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "LTE",buff, buff2,qcString, qc);
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true && $3.isVariable == true)
+                                {
+                                    insererQuadreplet(q, "LTE",$1.nameVariable, $2.nameVariable,qcString, qc);
+                                }
+                                else
+                                {
+                                    if($1.isVariable==true)
+                                    {
+                                        sprintf(buff2, "%d", $3.integerValue);
+                                        insererQuadreplet(q, "LTE",$1.nameVariable, buff2,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($3.isVariable==true)
+                                        {
+                                            sprintf(buff, "%d", $1.integerValue);
+                                            insererQuadreplet(q, "LTE",buff, $3.nameVariable,qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            sprintf(buff, "%d", $1.integerValue);
+                                            sprintf(buff2, "%d", $3.integerValue);
+                                            insererQuadreplet(q, "LTE",buff, buff2,qcString, qc);
+                                        }
+                                    }
+                                }
                                 qc++;
                             }
                             else {
@@ -748,10 +1358,35 @@ Expression:
                                     char buff[255];
                                     char buff2[255];
                                     char qcString[20];
-                                    sprintf(buff, "%f", $1.floatValue);
-                                    sprintf(buff2, "%f", $3.floatValue);
                                     sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "LTE",buff, buff2,qcString, qc);
+                                    strcpy($$.nameVariable,qcString);
+                                    $$.isVariable=true;
+                                    if($1.isVariable == true && $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "LTE",$1.nameVariable, $2.nameVariable,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable==true)
+                                        {
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            insererQuadreplet(q, "LTE",$1.nameVariable, buff2,qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable==true)
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                insererQuadreplet(q, "LTE",buff, $3.nameVariable,qcString, qc);
+                                            }
+                                            else
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                sprintf(buff2, "%f", $3.floatValue);
+                                                insererQuadreplet(q, "LTE",buff, buff2,qcString, qc);
+                                            }
+                                        }
+                                    }
                                     qc++;
                                 }
                             }
@@ -777,10 +1412,35 @@ Expression:
                             char buff[255];
                             char buff2[255];
                             char qcString[20];
-                            strcpy(buff, $1.stringValue);
-                            strcpy(buff2, $3.stringValue);
                             sprintf(qcString, "%s%d", "R",qc);
-                            insererQuadreplet(&q, "GT",buff, buff2,qcString, qc);
+                            strcpy($$.nameVariable,qcString);
+                            $$.isVariable=true;
+                            if($1.isVariable == true && $3.isVariable == true)
+                            {
+                                insererQuadreplet(q, "GT",$1.nameVariable, $2.nameVariable,qcString, qc);
+                            }
+                            else
+                            {
+                                if($1.isVariable==true)
+                                {
+                                    strcpy(buff2, $3.stringValue);
+                                    insererQuadreplet(q, "GT",$1.nameVariable, buff2,qcString, qc);
+                                }
+                                else
+                                {
+                                    if($3.isVariable==true)
+                                    {
+                                        strcpy(buff, $1.stringValue);
+                                        insererQuadreplet(q, "GT",buff, $3.nameVariable,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        strcpy(buff, $1.stringValue);
+                                        strcpy(buff2, $3.stringValue);
+                                        insererQuadreplet(q, "GT",buff, buff2,qcString, qc);
+                                    }
+                                }
+                            }
                             qc++;
 
                         }
@@ -798,10 +1458,35 @@ Expression:
                                 char buff[255];
                                 char buff2[255];
                                 char qcString[20];
-                                sprintf(buff, "%d", $1.integerValue);
-                                sprintf(buff2, "%d", $3.integerValue);
                                 sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "GT",buff, buff2,qcString, qc);
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true && $3.isVariable == true)
+                                {
+                                    insererQuadreplet(q, "GT",$1.nameVariable, $2.nameVariable,qcString, qc);
+                                }
+                                else
+                                {
+                                    if($1.isVariable==true)
+                                    {
+                                        sprintf(buff2, "%d", $3.integerValue);
+                                        insererQuadreplet(q, "GT",$1.nameVariable, buff2,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($3.isVariable==true)
+                                        {
+                                            sprintf(buff, "%d", $1.integerValue);
+                                            insererQuadreplet(q, "GT",buff, $3.nameVariable,qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            sprintf(buff, "%d", $1.integerValue);
+                                            sprintf(buff2, "%d", $3.integerValue);
+                                            insererQuadreplet(q, "GT",buff, buff2,qcString, qc);
+                                        }
+                                    }
+                                }
                                 qc++;
                             }
                             else {
@@ -817,10 +1502,35 @@ Expression:
                                     char buff[255];
                                     char buff2[255];
                                     char qcString[20];
-                                    sprintf(buff, "%f", $1.floatValue);
-                                    sprintf(buff2, "%f", $3.floatValue);
                                     sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "GT",buff, buff2,qcString, qc);
+                                    strcpy($$.nameVariable,qcString);
+                                    $$.isVariable=true;
+                                    if($1.isVariable == true && $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "GT",$1.nameVariable, $2.nameVariable,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable==true)
+                                        {
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            insererQuadreplet(q, "GT",$1.nameVariable, buff2,qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable==true)
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                insererQuadreplet(q, "GT",buff, $3.nameVariable,qcString, qc);
+                                            }
+                                            else
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                sprintf(buff2, "%f", $3.floatValue);
+                                                insererQuadreplet(q, "GT",buff, buff2,qcString, qc);
+                                            }
+                                        }
+                                    }
                                     qc++;
                                 }
                             }
@@ -846,10 +1556,35 @@ Expression:
                             char buff[255];
                             char buff2[255];
                             char qcString[20];
-                            strcpy(buff, $1.stringValue);
-                            strcpy(buff2, $3.stringValue);
                             sprintf(qcString, "%s%d", "R",qc);
-                            insererQuadreplet(&q, "GTE",buff, buff2,qcString, qc);
+                            strcpy($$.nameVariable,qcString);
+                            $$.isVariable=true;
+                            if($1.isVariable == true && $3.isVariable == true)
+                            {
+                                insererQuadreplet(q, "GTE",$1.nameVariable, $2.nameVariable,qcString, qc);
+                            }
+                            else
+                            {
+                                if($1.isVariable==true)
+                                {
+                                    strcpy(buff2, $3.stringValue);
+                                    insererQuadreplet(q, "GTE",$1.nameVariable, buff2,qcString, qc);
+                                }
+                                else
+                                {
+                                    if($3.isVariable==true)
+                                    {
+                                        strcpy(buff, $1.stringValue);
+                                        insererQuadreplet(q, "GTE",buff, $3.nameVariable,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        strcpy(buff, $1.stringValue);
+                                        strcpy(buff2, $3.stringValue);
+                                        insererQuadreplet(q, "GTE",buff, buff2,qcString, qc);
+                                    }
+                                }
+                            }
                             qc++;
                         }
                         else{
@@ -865,10 +1600,35 @@ Expression:
                                 char buff[255];
                                 char buff2[255];
                                 char qcString[20];
-                                sprintf(buff, "%d", $1.integerValue);
-                                sprintf(buff2, "%d", $3.integerValue);
                                 sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "GTE",buff, buff2,qcString, qc);
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true && $3.isVariable == true)
+                                {
+                                    insererQuadreplet(q, "GTE",$1.nameVariable, $2.nameVariable,qcString, qc);
+                                }
+                                else
+                                {
+                                    if($1.isVariable==true)
+                                    {
+                                        sprintf(buff2, "%d", $3.integerValue);
+                                        insererQuadreplet(q, "GTE",$1.nameVariable, buff2,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($3.isVariable==true)
+                                        {
+                                            sprintf(buff, "%d", $1.integerValue);
+                                            insererQuadreplet(q, "GTE",buff, $3.nameVariable,qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            sprintf(buff, "%d", $1.integerValue);
+                                            sprintf(buff2, "%d", $3.integerValue);
+                                            insererQuadreplet(q, "GTE",buff, buff2,qcString, qc);
+                                        }
+                                    }
+                                }
                                 qc++;
                             }
                             else {
@@ -884,10 +1644,35 @@ Expression:
                                     char buff[255];
                                     char buff2[255];
                                     char qcString[20];
-                                    sprintf(buff, "%f", $1.floatValue);
-                                    sprintf(buff2, "%f", $3.floatValue);
                                     sprintf(qcString, "%s%d", "R",qc);
-                                    insererQuadreplet(&q, "GTE",buff, buff2,qcString, qc);
+                                    strcpy($$.nameVariable,qcString);
+                                    $$.isVariable=true;
+                                    if($1.isVariable == true && $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "GTE",$1.nameVariable, $2.nameVariable,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable==true)
+                                        {
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            insererQuadreplet(q, "GTE",$1.nameVariable, buff2,qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable==true)
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                insererQuadreplet(q, "GTE",buff, $3.nameVariable,qcString, qc);
+                                            }
+                                            else
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                sprintf(buff2, "%f", $3.floatValue);
+                                                insererQuadreplet(q, "GTE",buff, buff2,qcString, qc);
+                                            }
+                                        }
+                                    }
                                     qc++;
                                 }
                             }
@@ -913,10 +1698,35 @@ Expression:
                             char buff[255];
                             char buff2[255];
                             char qcString[20];
-                            strcpy(buff, $1.stringValue);
-                            strcpy(buff2, $3.stringValue);
                             sprintf(qcString, "%s%d", "R",qc);
-                            insererQuadreplet(&q, "ET",buff, buff2,qcString, qc);
+                            strcpy($$.nameVariable,qcString);
+                            $$.isVariable=true;
+                            if($1.isVariable == true && $3.isVariable == true)
+                            {
+                                insererQuadreplet(q, "ET",$1.nameVariable, $2.nameVariable,qcString, qc);
+                            }
+                            else
+                            {
+                                if($1.isVariable==true)
+                                {
+                                    strcpy(buff2, $3.stringValue);
+                                    insererQuadreplet(q, "ET",$1.nameVariable, buff2,qcString, qc);
+                                }
+                                else
+                                {
+                                    if($3.isVariable==true)
+                                    {
+                                        strcpy(buff, $1.stringValue);
+                                        insererQuadreplet(q, "ET",buff, $3.nameVariable,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        strcpy(buff, $1.stringValue);
+                                        strcpy(buff2, $3.stringValue);
+                                        insererQuadreplet(q, "ET",buff, buff2,qcString, qc);
+                                    }
+                                }
+                            }
                             qc++;
                         }
                         else{
@@ -932,10 +1742,35 @@ Expression:
                                 char buff[255];
                                 char buff2[255];
                                 char qcString[20];
-                                sprintf(buff, "%d", $1.integerValue);
-                                sprintf(buff2, "%d", $3.integerValue);
                                 sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "ET",buff, buff2,qcString, qc);
+                                strcpy($$.nameVariable,qcString);
+                                $$.isVariable=true;
+                                if($1.isVariable == true && $3.isVariable == true)
+                                {
+                                    insererQuadreplet(q, "ET",$1.nameVariable, $2.nameVariable,qcString, qc);
+                                }
+                                else
+                                {
+                                    if($1.isVariable==true)
+                                    {
+                                        sprintf(buff2, "%d", $3.integerValue);
+                                        insererQuadreplet(q, "ET",$1.nameVariable, buff2,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($3.isVariable==true)
+                                        {
+                                            sprintf(buff, "%d", $1.integerValue);
+                                            insererQuadreplet(q, "ET",buff, $3.nameVariable,qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            sprintf(buff, "%d", $1.integerValue);
+                                            sprintf(buff2, "%d", $3.integerValue);
+                                            insererQuadreplet(q, "ET",buff, buff2,qcString, qc);
+                                        }
+                                    }
+                                }
                                 qc++;
                             }
                             else {
@@ -950,13 +1785,38 @@ Expression:
                                     }
                                 }
                                 char buff[255];
-                                char buff2[255];
-                                char qcString[20];
-                                sprintf(buff, "%f", $1.floatValue);
-                                sprintf(buff2, "%f", $3.floatValue);
-                                sprintf(qcString, "%s%d", "R",qc);
-                                insererQuadreplet(&q, "ET",buff, buff2,qcString, qc);
-                                qc++;
+                                    char buff2[255];
+                                    char qcString[20];
+                                    sprintf(qcString, "%s%d", "R",qc);
+                                    strcpy($$.nameVariable,qcString);
+                                    $$.isVariable=true;
+                                    if($1.isVariable == true && $3.isVariable == true)
+                                    {
+                                        insererQuadreplet(q, "ET",$1.nameVariable, $2.nameVariable,qcString, qc);
+                                    }
+                                    else
+                                    {
+                                        if($1.isVariable==true)
+                                        {
+                                            sprintf(buff2, "%f", $3.floatValue);
+                                            insererQuadreplet(q, "ET",$1.nameVariable, buff2,qcString, qc);
+                                        }
+                                        else
+                                        {
+                                            if($3.isVariable==true)
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                insererQuadreplet(q, "ET",buff, $3.nameVariable,qcString, qc);
+                                            }
+                                            else
+                                            {
+                                                sprintf(buff, "%f", $1.floatValue);
+                                                sprintf(buff2, "%f", $3.floatValue);
+                                                insererQuadreplet(q, "ET",buff, buff2,qcString, qc);
+                                            }
+                                        }
+                                    }
+                                    qc++;
                             }
                         }   
             }
@@ -978,10 +1838,35 @@ Expression:
             char buff[255];
             char buff2[255];
             char qcString[20];
-            strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
-            strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
             sprintf(qcString, "%s%d", "R",qc);
-            insererQuadreplet(&q, "AND",buff, buff2,qcString, qc);
+            strcpy($$.nameVariable,qcString);
+            $$.isVariable=true;
+            if($1.isVariable == true & $3.isVariable == true)
+            {
+                insererQuadreplet(q, "AND",$1.nameVariable, $3.nameVariable, qcString, qc);
+            }
+            else
+            {
+                if($1.isVariable == true)
+                {
+                    strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                    insererQuadreplet(q, "AND",$1.nameVariable, buff2, qcString, qc);
+                }
+                else
+                {
+                    if($3.isVariable == true)
+                    {
+                        strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+                        insererQuadreplet(q, "AND",buff, $3.nameVariable, qcString, qc);
+                    }
+                    else
+                    {
+                        strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+                        strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                        insererQuadreplet(q, "AND",buff, buff2,qcString, qc);
+                    }
+                }
+            }
             qc++;
         }
         else
@@ -1002,10 +1887,35 @@ Expression:
             char buff[255];
             char buff2[255];
             char qcString[20];
-            strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
-            strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
             sprintf(qcString, "%s%d", "R",qc);
-            insererQuadreplet(&q, "OR",buff, buff2,qcString, qc);
+            strcpy($$.nameVariable,qcString);
+            $$.isVariable=true;
+            if($1.isVariable == true & $3.isVariable == true)
+            {
+                insererQuadreplet(q, "OR",$1.nameVariable, $3.nameVariable, qcString, qc);
+            }
+            else
+            {
+                if($1.isVariable == true)
+                {
+                    strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                    insererQuadreplet(q, "OR",$1.nameVariable, buff2, qcString, qc);
+                }
+                else
+                {
+                    if($3.isVariable == true)
+                    {
+                        strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+                        insererQuadreplet(q, "OR",buff, $3.nameVariable, qcString, qc);
+                    }
+                    else
+                    {
+                        strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
+                        strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                        insererQuadreplet(q, "OR",buff, buff2,qcString, qc);
+                    }
+                }
+            }
             qc++;
         }
         else
@@ -1024,7 +1934,7 @@ DeclarationInitialisation:
                 valeurToString($3, valeurString);
                 setValeur($1, valeurString);
 
-                insererQuadreplet(&q, ":=", valeurString, "", $1->nom, qc);
+                insererQuadreplet(q, ":=", valeurString, "", $1.nom, qc);
                 qc++;
             }else{
                 printf("Type mismatch\n");
@@ -1040,7 +1950,7 @@ DeclarationInitialisation:
                 for(int i = 0; i< $3.length; i++){
                     char buff[255];
                     sprintf(buff, "%s[%d]", $1->nom, i);
-                    insererQuadreplet(&q, ":=", $3.tabValeur[i], "", "buff", qc);
+                    insererQuadreplet(q, ":=", $3.tabValeur[i], "", "buff", qc);
                     qc++;
                 };
             }else{
@@ -1087,11 +1997,11 @@ Declaration:
 
                 char buff[255];
                 sprintf(buff, "%d", $4.integerValue);
-                insererQuadreplet(&q, "BOUNDS","0", buff, "", qc);
+                insererQuadreplet(q, "BOUNDS","0", buff, "", qc);
                 qc++;
 
                 sprintf(buff, "%d", $4.integerValue);
-                insererQuadreplet(&q, "ADEC", $6, "", "", qc);
+                insererQuadreplet(q, "ADEC", $6, "", "", qc);
                 qc++;
             };
         }else{
@@ -1111,11 +2021,11 @@ Declaration:
 
                 char buff[255];
                 sprintf(buff, "%d", $5.integerValue);
-                insererQuadreplet(&q, "BOUNDS","0", buff, "", qc);
+                insererQuadreplet(q, "BOUNDS","0", buff, "", qc);
                 qc++;
 
                 sprintf(buff, "%d", $5.integerValue);
-                insererQuadreplet(&q, "ADEC", $7, "", "", qc);
+                insererQuadreplet(q, "ADEC", $7, "", "", qc);
                 qc++;
             };
         }else{
@@ -1138,26 +2048,15 @@ Affectation:
                     {
                         setValeur($1.symbole, valeurString);
 
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet(":=", valeurString, "", $1.symbole->nom, qc));
-                        }else{
-                            insererQuadreplet(&q, ":=", valeurString, "", $1.symbole->nom, qc);
-                            qc++;
-                        }
-
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                        qc++;
                     }
                 else
                     {
                         setArrayElement($1.symbole, $1.index, valeurString);
 
-                        char buff[255];
-                        sprintf(buff, "%s[%d]", $1.symbole->nom, $1.index);
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet(":=", valeurString, "", buff, qc));
-                        }else{
-                            insererQuadreplet(&q, ":=", valeurString, "", buff, qc);
-                            qc++;
-                        }
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                        qc++;
                     }
 
             }
@@ -1180,28 +2079,17 @@ Affectation:
 
                         {
                             getValeur($1.symbole, valeurString);
-                            if(isForLoop){
-                                pushFifo(quadFifo, creerQuadreplet("ADD", $1.symbole->nom, "1", $1.symbole->nom, qc));
-                            }else{
 
-                                insererQuadreplet(&q, "ADD", $1.symbole->nom, "1", $1.symbole->nom, qc);
-                                qc++;
-                            }
+                            insererQuadreplet(q, "++", $1.symbole->nom, "", $1.symbole->nom, qc);
+                            qc++;
                         
                         }
                     else
                         {
                             getArrayElement($1.symbole, $1.index, valeurString);
 
-                            char buff[255];
-                            sprintf(buff, "%s[%d]", $1.symbole->nom, $1.index);
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet("ADD", buff, "1", buff, qc));
-                        }else{
-
-                            insererQuadreplet(&q, "ADD", buff, "1", buff, qc);
+                            insererQuadreplet(q, "++", $1.symbole->array->tabValeur[$1.index], "", $1.symbole->array->tabValeur[$1.index], qc);
                             qc++;
-                        }
                         }
 
 
@@ -1218,10 +2106,16 @@ Affectation:
 
                         {
                             setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;
                         }
                     else
                         {
                             setArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
                         }
 
                 }
@@ -1240,29 +2134,21 @@ Affectation:
                 }else{
                     char valeurString[255];
                     
-                    if($1.symbole->type < simpleToArrayOffset){
-                        getValeur($1.symbole, valeurString);
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet("SUB", $1.symbole->nom, "1", $1.symbole->nom, qc));
-                        }else{
+                    if($1.symbole->type < simpleToArrayOffset)
 
-                        insererQuadreplet(&q, "SUB", $1.symbole->nom, "1", $1.symbole->nom, qc);
-                        qc++;
+                        {
+                            getValeur($1.symbole, valeurString);
+                            
+                            insererQuadreplet(q, "--", $1.symbole->nom, "", $1.symbole->nom, qc);
+                            qc++;
                         }
-                        
-                    }else{
-                        getArrayElement($1.symbole, $1.index, valeurString);
-
-                        char buff[255];
-                        sprintf(buff, "%s[%d]", $1.symbole->nom, $1.index);
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet("SUB", buff, "1", buff, qc));
-                        }else{
-
-                        insererQuadreplet(&q, "SUB", buff, "1", buff, qc);
-                        qc++;
+                    else
+                        {
+                            getArrayElement($1.symbole, $1.index, valeurString);
+                            
+                            insererQuadreplet(q, "--", $1.symbole->array->tabValeur[$1.index], "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
                         }
-                    }
 
 
                     if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
@@ -1273,14 +2159,22 @@ Affectation:
                         double valeur = atof(valeurString);
                         valeur--;
                         sprintf(valeurString,"%.4f",valeur);
-                    }
+                    };
+                    if($1.symbole->type < simpleToArrayOffset)
 
-                    if($1.symbole->type < simpleToArrayOffset){
-                        setValeur($1.symbole, valeurString);
-                    }
-                    else{
-                        setArrayElement($1.symbole, $1.index, valeurString);
-                    }
+                        {
+                            setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;
+                        }
+                    else
+                        {
+                            setArrayElement($1.symbole, $1.index, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "",$1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;
+                        }
 
                 }
             }
@@ -1312,6 +2206,14 @@ Affectation:
                     if($1.symbole->type % simpleToArrayOffset == TYPE_STRING){
                         {
                             strcat(valeurString,$3.stringValue);
+                            if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, $3.stringValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], $3.stringValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            }  
                         }
 
                     }else if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
@@ -1320,43 +2222,58 @@ Affectation:
                         int result = valeur + valeurExpression;
                         sprintf(valeurString, "%d", result);
 
+
+                        if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                     }else if($1.symbole->type % simpleToArrayOffset == TYPE_FLOAT){
                         double valeurExpression = $3.floatValue;
                         double valeur = atof(valeurString);
                         double result = valeur + valeurExpression;
-                        sprintf(valeurString,"%.4f",result); 
+                        sprintf(valeurString,"%.4f",result);
+
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
                     }else{
                         if($3.booleanValue){
                             strcpy(valeurString, "true");
+
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "+=", $1.symbole->nom, "true", $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "+=", $1.symbole->array->tabValeur[$1.index], "true", $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
                         };
                     };
-
-                    char expressionValue[255];
-                    valeurToString($3, expressionValue);
                     if($1.symbole->type < simpleToArrayOffset)
                         {
                             setValeur($1.symbole, valeurString);
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet("ADD", $1.symbole->nom, expressionValue, $1.symbole->nom, qc));
-                        }else{
 
-                            insererQuadreplet(&q, "ADD", $1.symbole->nom, expressionValue, $1.symbole->nom, qc);
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
                             qc++;
-                        }
                         }
                     else
                         {
                             setArrayElement($1.symbole, $1.index, valeurString);
 
-                            char buff[255];
-                            sprintf(buff, "%s[%d]", $1.symbole->nom, $1.index);
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet("ADD", buff, expressionValue, buff, qc));
-                        }else{
-
-                            insererQuadreplet(&q, "ADD", buff, expressionValue, buff, qc);
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
                             qc++;
-                        }
                         }
 
                 }
@@ -1398,41 +2315,42 @@ Affectation:
                         int result = valeur - valeurExpression;
                         sprintf(valeurString, "%d", result);
 
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "-=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "-=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                     }else{
                         double valeurExpression = $3.floatValue;
                         double valeur = atof(valeurString);
                         double result = valeur - valeurExpression;
                         sprintf(valeurString,"%.4f",result);
 
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "-=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "-=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
                     };
-
-                    char expressionValue[255];
-                    valeurToString($3, expressionValue);
                     if($1.symbole->type < simpleToArrayOffset)
-                        {
-                            setValeur($1.symbole, valeurString);
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet("SUB", $1.symbole->nom, expressionValue, $1.symbole->nom, qc));
-                        }else{
+                        {setValeur($1.symbole, valeurString);
 
-                            insererQuadreplet(&q, "SUB", $1.symbole->nom, expressionValue, $1.symbole->nom, qc);
-                            qc++;
-                        }
-                        }
-                    else
-                        {
-                            setArrayElement($1.symbole, $1.index, valeurString);
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                        qc++;}
+                    else{
+                        setArrayElement($1.symbole, $1.index, valeurString);
 
-                            char buff[255];
-                            sprintf(buff, "%s[%d]", $1.symbole->nom, $1.index);
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet("SUB", buff, expressionValue, buff, qc));
-                        }else{
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                        qc++;}
 
-                            insererQuadreplet(&q, "SUB", buff, expressionValue, buff, qc);
-                            qc++;
-                        }
-                        }
                     }
                 }
             }
@@ -1470,12 +2388,30 @@ Affectation:
                         int result = valeur * valeurExpression;
                         sprintf(valeurString, "%d", result);
 
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "*=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                     }else if($1.symbole->type % simpleToArrayOffset == TYPE_FLOAT){
                         double valeurExpression = $3.floatValue;
                         double valeur = atof(valeurString);
                         double result = valeur * valeurExpression;
                         sprintf(valeurString,"%.4f",result);
 
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "*=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
 
                     }else{
                         if($3.booleanValue){
@@ -1489,36 +2425,30 @@ Affectation:
                                 };
                             };
 
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "*=", $1.symbole->nom, $3.booleanValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "*=", $1.symbole->array->tabValeur[$1.index], $3.booleanValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                         };
                         
                     };
-                    char expressionValue[255];
-                    valeurToString($3, expressionValue);
                     if($1.symbole->type < simpleToArrayOffset)
-                        {
-                            setValeur($1.symbole, valeurString);
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet("MUL", $1.symbole->nom, expressionValue, $1.symbole->nom, qc));
-                        }else{
 
-                            insererQuadreplet(&q, "MUL", $1.symbole->nom, expressionValue, $1.symbole->nom, qc);
-                            qc++;
-                        }
-                        }
+                        {setValeur($1.symbole, valeurString);
+
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                        qc++;}
                     else
-                        {
-                            setArrayElement($1.symbole, $1.index, valeurString);
+                        {setArrayElement($1.symbole, $1.index, valeurString);
 
-                            char buff[255];
-                            sprintf(buff, "%s[%d]", $1.symbole->nom, $1.index);
-                        if(isForLoop){
-                            pushFifo(quadFifo, creerQuadreplet("MUL", buff, expressionValue, buff, qc));
-                        }else{
+                        insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                        qc++;}
 
-                            insererQuadreplet(&q, "MUL", buff, expressionValue, buff, qc);
-                            qc++;
-                        }
-                        }
                     }
                 }
             }
@@ -1536,7 +2466,7 @@ Affectation:
                     && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
                         printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
                     }else{
-                        
+
                         char valeurString[255];
 
                         if($1.symbole->type < simpleToArrayOffset)
@@ -1551,58 +2481,49 @@ Affectation:
                             
                         }
 
-                        bool abort = false;
-
 
                         if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
                             int valeurExpression = $3.integerValue;
-                            if(valeurExpression == 0){
-                                abort = true;
-                            }
                             int valeur = atoi(valeurString);
                             int result = valeur / valeurExpression;
                             sprintf(valeurString, "%d", result);
 
+
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "/=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
+                            }
+                            else{
+                                insererQuadreplet(q, "/=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+
                         }else {
                             double valeurExpression = $3.floatValue;
                             double valeur = atof(valeurString);
-                            if(valeurExpression == 0.0){
-                                abort = true;
-                            }
                             double result = valeur / valeurExpression;
                             sprintf(valeurString,"%.4f",result);
 
-                        };
-                        if(!abort){
-                        char expressionValue[255];
-                        valeurToString($3, expressionValue);
-                        if($1.symbole->type < simpleToArrayOffset){
-                            setValeur($1.symbole, valeurString);
-                            if(isForLoop){
-                                pushFifo(quadFifo, creerQuadreplet("DIV", $1.symbole->nom, expressionValue, $1.symbole->nom, qc));
-                            }else{
 
-                                insererQuadreplet(&q, "DIV", $1.symbole->nom, expressionValue, $1.symbole->nom, qc);
+                             if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "/=", $1.symbole->nom, $3.floatValue, $1.symbole->nom, qc);
                                 qc++;
                             }
-                        }
+                            else{
+                                insererQuadreplet(q, "/=", $1.symbole->array->tabValeur[$1.index], $3.floatValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
+                        };
+                        if($1.symbole->type < simpleToArrayOffset)
+                            {setValeur($1.symbole, valeurString);
+
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                            qc++;}
                         else
-                        {
-                            setArrayElement($1.symbole, $1.index, valeurString);
+                            {setArrayElement($1.symbole, $1.index, valeurString);
 
-                            char buff[255];
-                            sprintf(buff, "%s[%d]", $1.symbole->nom, $1.index);
-                            if(isForLoop){
-                                pushFifo(quadFifo, creerQuadreplet("DIV", buff, expressionValue, buff, qc));
-                            }else{
-
-                                    insererQuadreplet(&q, "DIV", buff, expressionValue, buff, qc);
-                                    qc++;
-                            }
-                        }
-                        }else{
-                            printf("Erreur semantique : division par zero\n");
-                        }
+                            insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                            qc++;}
 
                     }
                 }
@@ -1617,100 +2538,50 @@ Affectation:
                 if($1.symbole->type % simpleToArrayOffset != $3.type){
                     printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
                 }else{
-                    if($1.symbole->type % simpleToArrayOffset != TYPE_INTEGER
-                    && $1.symbole->type % simpleToArrayOffset != TYPE_FLOAT){
+                    if($1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
                         printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
                     }else{
 
                         char valeurString[255];
-
-                        char buff[255];
-                        char buff2[255];
-                        char qcString[20];
-
-                        char nom[255];
                         
 
                         if($1.symbole->type < simpleToArrayOffset){
                             getValeur($1.symbole, valeurString);
-                            strcpy(nom, $1.symbole->nom);
+
                             }
                         else{
                             getArrayElement($1.symbole, $1.index, valeurString);
-                            sprintf(nom, "%s[%d]", $1.symbole->nom, $1.index);
                             }
 
-                        if($1.symbole->type % simpleToArrayOffset == TYPE_INTEGER){
-                            int valeurExpression = $3.integerValue;
-                            int valeur = atoi(valeurString);
-                            int result = valeur % valeurExpression;
-                            sprintf(valeurString, "%d", result);
 
-                            sprintf(buff, "%s", nom);
-                            sprintf(buff2, "%d", valeurExpression);
-                            sprintf(qcString, "%s%d", "R",qc);
+                        int valeurExpression = $3.integerValue;
+                        int valeur = atoi(valeurString);
+                        int result = valeur % valeurExpression;
+                        sprintf(valeurString, "%d", result);
 
-                            if(isForLoop){
-                                pushFifo(quadFifo, creerQuadreplet("DIV",buff, buff2,qcString, qc));
-                            }else{
-                            insererQuadreplet(&q, "DIV",buff, buff2,qcString, qc);
-                            qc++;
+
+                         if($1.symbole->type < simpleToArrayOffset){
+                                insererQuadreplet(q, "%=", $1.symbole->nom, $3.integerValue, $1.symbole->nom, qc);
+                                qc++;
                             }
-                            strcpy(buff, qcString);
-                            sprintf(buff2, "%d", valeurExpression);
-                            sprintf(qcString, "%s%d", "R",qc);
-
-                            if(isForLoop){
-                                pushFifo(quadFifo, creerQuadreplet("MUL",buff, buff2,qcString, qc +1));
-                            }else{
-                            insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
-                            qc++;
-                            }
-                            strcpy(buff2, qcString);
-
-                        }else {
-                            double valeurExpression = $3.floatValue;
-                            double valeur = atof(valeurString);
-                            double result = fmod(valeur ,$3.floatValue);
-                            sprintf(valeurString, "%.4f", result);
-
-                            sprintf(buff, "%s", nom);
-                            sprintf(buff2, "%f", valeurExpression);
-                            sprintf(qcString, "%s%d", "R",qc);
-
-                            if(isForLoop){
-                                pushFifo(quadFifo, creerQuadreplet("DIV",buff, buff2,qcString, qc));
-                            }else{
-                            insererQuadreplet(&q, "DIV",buff, buff2,qcString, qc);
-                            qc++;
-                            }
-                            strcpy(buff, qcString);
-                            sprintf(buff2, "%f", valeurExpression);
-                            sprintf(qcString, "%s%d", "R",qc);
-
-                            if(isForLoop){
-                                pushFifo(quadFifo, creerQuadreplet("MUL",buff, buff2,qcString, qc +1));
-                            }else{
-                            insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
-                            qc++;
-                            }
-                            strcpy(buff2, qcString);
-
-                        };
-                            if(isForLoop){
-                                pushFifo(quadFifo, creerQuadreplet("SUB",nom, buff2,nom, qc +2));
-                            }else{
-                            insererQuadreplet(&q, "SUB",nom, buff2,nom, qc);
-                            qc++;
-                            }
+                            else{
+                                insererQuadreplet(q, "%=", $1.symbole->array->tabValeur[$1.index], $3.integerValue, $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
+                            } 
 
                         if($1.symbole->type < simpleToArrayOffset)
                             {
                                 setValeur($1.symbole, valeurString);
+
+                                insererQuadreplet(q, ":=", valeurString, "", $1.symbole->nom, qc);
+                                qc++;
                             }
                         else
                             {
                                 setArrayElement($1.symbole, $1.index, valeurString);
+
+                                insererQuadreplet(q, ":=", valeurString, "", $1.symbole->array->tabValeur[$1.index], qc);
+                                qc++;
                             }
                     }
                 }
@@ -1736,11 +2607,11 @@ DebutIf :
     if($3.type == TYPE_BOOLEAN){
         char r[10]; // contien le resultat de l'expression de la condition
         sprintf(r,"R%d",qc);	// this writes R to the r string
-		insererQuadreplet(&q,"BZ","tmp","",r,qc);
+		q = insererQuadreplet(q,"BZ","tmp","",r,qc);
         // c'est ce qui est mis a jour au niveau
 		// du else (branchement si t est egale a 0) r="Rqc" 
 		//c'est le resultat de l'evaluation du condition
-		empiler(stack,qc); // on sauvgarde l'addresse de cette quadreplet 
+		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet 
 		qc++;
     }else{
         printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
@@ -1752,9 +2623,10 @@ ConditionELSE: %empty { // routine fin if quand y a pas du else
         // on met a jour l'addresse de jump vers la fin de if 
         char adresse[10];
         sprintf(adresse,"%d",qc);
-        int sauv = depiler(stack);// depiler pour avoir la derniere adresse
+        int sauv = depiler(&pile);// depiler pour avoir la derniere adresse
         // sauvgardee dans la pile et updater le branchement de if avec l'adresse de fin if
-        updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du la routine if
+        q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du la routine if
+        qc++;
     }
     | ELSE Condition 
     | DebutElse Bloc ACCOLADEFERMANTE { // routine finElse
@@ -1762,9 +2634,9 @@ ConditionELSE: %empty { // routine fin if quand y a pas du else
     // on met a jour l'addresse de jump vers la fin de else 
     char adresse[10];
 	sprintf(adresse,"%d",qc);
-    int sauv = depiler(stack);// depiler pour avoir la derniere addresse
+    int sauv = depiler(&pile);// depiler pour avoir la derniere addresse
 	// sauvgardee dans la pile et updater le branchement de else avec l'adresse debut de fin
-	updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine else
+	q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine else
     qc++;
 }
 ;
@@ -1772,11 +2644,11 @@ DebutElse : ELSE ACCOLADEOUVRANTE { // routineElse
     // ici c'est le debut de else
 	char adresse[10];
 	sprintf(adresse,"%d",qc);
-    int sauv = depiler(stack);// depiler pour avoire la derniere addresse
+    int sauv = depiler(&pile);// depiler pour avoire la derniere addresse
 	// sauvgardee dans la pile et updater le branchement de IF avec l'dresse debut de else
-	updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine if
-	insererQuadreplet(&q,"BR","temp","","",qc);
-	empiler(stack,qc);
+	q = updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine if
+	q = insererQuadreplet(q,"BR","temp","","",qc);
+	empiler(&pile,qc);
     qc++;
 }
 ;
@@ -1785,20 +2657,20 @@ While:
     DebutWhile Bloc ACCOLADEFERMANTE { // routineFinWhile
     // ici c'est la fin du while
 	char adresse[10];
-    char adresseCondWhile [10];
+   
     // on depile deux foix pour avoire l'addresse de condition du while pour se 
     // brancher vers la condition du while inconditionnelemnt (evaluer la condition pour la prochaine iteration)
-    int sauvAdrDebutWhile = depiler(stack);//  c'est l'adr de debut while car c'est la derniere 
+    int sauvAdrDebutWhile = depiler(&pile);//  c'est l'adr de debut while car c'est la derniere 
     // qui a ete empilé
-    int sauvAdrCondWhile = depiler(stack); // l'adr de condition
+    int sauvAdrCondWhile = depiler(&pile); // l'adr de condition
     // on l'ecrit dans une chaine
     sprintf(adresseCondWhile,"%d",sauvAdrCondWhile);
     // on insert un quadreplet pour pour se brancher vers la condition du while
-    insererQuadreplet(&q,"BR",adresseCondWhile,"","",qc);
+    q = insererQuadreplet(q,"BR",adresseCondWhile,"","",qc);
     qc++;
     // updater l'adr du branchement vers la fin (le prochain bloc d'instructions) crée dans debut while
     sprintf(adresse,"%d",qc);
-    updateQuadreplet(q,sauvAdrDebutWhile,adresse);
+    q = updateQuadreplet(q,sauvAdrDebutWhile,adresse);
 }
 ;
 DebutWhile : 
@@ -1807,9 +2679,9 @@ DebutWhile :
     if($2.type == TYPE_BOOLEAN){
         char r[10]; // contien le resultat de l'expression de la condition
         sprintf(r,"R%d",qc);	// this writes R to the r string
-		insererQuadreplet(&q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
+		q = insererQuadreplet(q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
         // to finWhile
-		empiler(stack,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
+		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
         // quadreplet
 		qc++;
     }else{
@@ -1821,7 +2693,7 @@ DebutWhile :
 ConditionWhile:
     WHILE PARENTHESEOUVRANTE { // routineCondWhile
     // ici on est avant la condition du while
-    empiler(stack,qc); // on sauvgarde l'addresse de cette quadreplet 
+    empiler(&pile,qc-1); // on sauvgarde l'addresse de cette quadreplet 
     // it think it's qc-1 car on incrémonte le qc aprés l'insertion
 }
 ;
@@ -1832,43 +2704,38 @@ For:
     DebutFor Bloc  ACCOLADEFERMANTE  { // routineFinFor
     // ici c'est la fin du for
 	char adresse[10];
-    char adresseCondFor[10];
+
     // on ajoute le quadreplet généré dans affectation qui incrémente le compteur
-    while(!fifoIsEmpty(quadFifo)){
-        ajouterQuadreplet(&q, popFifo(quadFifo), qc);
-        qc++;
-    }
+    q = ajouterQuadreplet(q,&sauvAffectationFor,qc);
+    qc++;
    
     // on depile deux foix pour avoir l'adresse de condition du for pour se 
     // brancher vers la condition du for inconditionnelemnt (evaluer la condition pour la prochaine iteration)
-    int sauvAdrDebutFor = depiler(stack);//  c'est l'adr de debut de for car c'est la derniere 
+    int sauvAdrDebutFor = depiler(&pile);//  c'est l'adr de debut de for car c'est la derniere 
     // qui a ete empilé
-    int sauvAdrCondFor = depiler(stack); // l'adr de condition du For
+    int sauvAdrCondFor = depiler(&pile); // l'adr de condition du For
     // on l'ecrit dans une chaine
     sprintf(adresseCondFor,"%d",sauvAdrCondFor);
     // on insert un quadreplet pour pour se brancher vers la condition du For inconditionnelemnt
-    insererQuadreplet(&q,"BR",adresseCondFor,"","",qc);
+    q = insererQuadreplet(q,"BR",adresseCondFor,"","",qc);
     qc++;
     // updater l'adr du branchement vers la fin (le prochain bloc d'instructions) crée dans debut du For
     sprintf(adresse,"%d",qc);
-    updateQuadreplet(q,sauvAdrDebutFor,adresse);
-
-    
+    q = updateQuadreplet(q,sauvAdrDebutFor,adresse);
 }
 ;
 
-DebutFor: 
+DebutFor : 
     ConditionFor Expression SEMICOLUMN Affectation PARENTHESEFERMANTE ACCOLADEOUVRANTE  { //routineDebutFor
 // ici c'est le debut du for
     if($2.type == TYPE_BOOLEAN){ // normalemeent ça change à $6 quand on insert les routines
         char r[10]; // contien le resultat de l'expression de la condition
         sprintf(r,"R%d",qc);	// this writes R to the r string
-		insererQuadreplet(&q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
+		q = insererQuadreplet(q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
         // to finFor (le prochain bloc d'instructions)
-		empiler(stack,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
+		empiler(&pile,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
         // quadreplet apres avec l'adresse de finFor
 		qc++;
-        isForLoop = false;
     }else{
         printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
     }
@@ -1878,10 +2745,10 @@ DebutFor:
 ConditionFor : 
     FOR PARENTHESEOUVRANTE DeclarationInitialisation SEMICOLUMN { // routineCondFor 
     // ici on est avant l'expression de la condition du For
-    empiler(stack,qc); // on sauvgarde l'addresse de cette quadreplet 
+    empiler(&pile,qc-1); // on sauvgarde l'addresse de cette quadreplet 
     // it think it's qc-1 car on incrémonte le qc aprés l'insertion
     //pour se brancher ici a la fin de l'iteration et reevaluer la condition
-    isForLoop = true;
+    isForLoop = 1;
 }
 ;
 Boucle:
@@ -2004,23 +2871,16 @@ int main (void)
         printf("erreur dans l'ouverture du fichier");
         return 1;
     }
-
-    stack = (pile *)malloc(sizeof(pile));
-    quadFifo = initializeFifo();
-
     yyparse();  
-    
+    printf("now printing\n");
     afficherTableSymboles(tableSymboles);
-    
-    afficherQuad(q);
-    
     if(tableSymboles != NULL){
         free(tableSymboles);
     }
 
     fclose(yyin);
 
-    // printf("succ\n");
+// printf("succ\n");
 
     return 0;
 }
