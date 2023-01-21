@@ -2653,16 +2653,6 @@ DebutIf :
     IF PARENTHESEOUVRANTE Expression PARENTHESEFERMANTE { // routine debut if
     // ici on est aprés la condition du if
 
-    if(isElseIf){
-            printf("kelb\n\n\n\\n");
-            char adresse[10];
-            sprintf(adresse,"%d",qc);
-            int sauv = depiler(stack);// depiler pour avoir la derniere adresse
-            // sauvgardee dans la pile et updater le branchement de if avec l'adresse de fin if
-            updateQuadreplet(q,sauv,adresse);
-            isElseIf = false;
-        }
-
     if($3.type == TYPE_BOOLEAN){
         char r[10]; // contien le resultat de l'expression de la condition
         sprintf(r,"R%d",qc -1);	// this writes R to the r string
@@ -2677,7 +2667,8 @@ DebutIf :
     }
 }
 ;
-ConditionELSE: %empty { // routine fin if quand y a pas du else
+ConditionELSE:
+    %empty { // routine fin if quand y a pas du else
         // ici on est a la fin de if et pas du else
         // on met a jour l'addresse de jump vers la fin de if 
         char adresse[10];
@@ -2695,6 +2686,15 @@ ConditionELSE: %empty { // routine fin if quand y a pas du else
     int sauv = depiler(stack);// depiler pour avoir la derniere addresse
 	// sauvgardee dans la pile et updater le branchement de else avec l'adresse debut de fin
 	updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine else
+
+    if(isElseIf){
+        char adresse[10];
+        sprintf(adresse,"%d",qc);
+        int sauv = depiler(stack);// depiler pour avoir la derniere adresse
+        // sauvgardee dans la pile et updater le branchement de if avec l'adresse de fin if
+        updateQuadreplet(q,sauv,adresse);
+        isElseIf = false;
+    }
 }
 ;
 DebutElse : ELSE ACCOLADEOUVRANTE { // routineElse
@@ -2711,15 +2711,16 @@ DebutElse : ELSE ACCOLADEOUVRANTE { // routineElse
 ;
 
 AvantElseIf: ELSE {
+
     char adresse[10];
-	sprintf(adresse,"%d",qc);
+	sprintf(adresse,"%d",qc+1);
     int sauv = depiler(stack);// depiler pour avoire la derniere addresse
 	// sauvgardee dans la pile et updater le branchement de IF avec l'dresse debut de else
 	updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine if
-
     insererQuadreplet(&q,"BR","tmp","","",qc);
     empiler(stack,qc);
     qc++;
+
     isElseIf = true;
 }
 
