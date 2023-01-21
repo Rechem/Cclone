@@ -4,11 +4,12 @@ typedef struct expression expression;
 struct expression{
     int type;
     char stringValue[255];
+    char nameVariable[255];
     int integerValue;
     double floatValue;
     bool booleanValue;
+    bool isVariable;
 };
-
 typedef struct tableau tableau;
 struct tableau{
     int type;
