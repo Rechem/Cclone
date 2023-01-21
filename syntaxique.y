@@ -1935,8 +1935,14 @@ DeclarationInitialisation:
                 char valeurString[255];
                 valeurToString($3, valeurString);
                 setValeur($1, valeurString);
-
-                insererQuadreplet(&q, ":=", valeurString, "", $1->nom, qc);
+                if($3.isVariable)
+                {
+                    insererQuadreplet(&q, ":=", $3.nameVariable, "", $1->nom, qc);                    
+                }
+                else
+                {
+                    insererQuadreplet(&q, ":=", valeurString, "", $1->nom, qc);
+                }
                 qc++;
             }else{
                 printf("Type mismatch\n");
@@ -2053,14 +2059,7 @@ Affectation:
                         if(isForLoop){
                             pushFifo(quadFifo, creerQuadreplet(":=", valeurString, "", $1.symbole->nom, qc));
                         }else{
-                            if($3.isVariable==true)
-                            {
-                              insererQuadreplet(&q, ":=", $3.nameVariable, "", $1.symbole->nom, qc);  
-                            }
-                            else
-                            {
-                                insererQuadreplet(&q, ":=", valeurString, "", $1.symbole->nom, qc);
-                            }
+                            insererQuadreplet(&q, ":=", valeurString, "", $1.symbole->nom, qc);
                             qc++;
                         }
 
