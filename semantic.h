@@ -10,7 +10,6 @@ struct expression{
     bool booleanValue;
     bool isVariable;
 };
-
 typedef struct tableau tableau;
 struct tableau{
     int type;
