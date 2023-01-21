@@ -21,6 +21,7 @@ typedef struct variable variable;
 struct variable{
     struct symbole * symbole;
     int index;
+    char indexString [20];
 };
 
 

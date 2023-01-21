@@ -105,7 +105,7 @@
 %nonassoc DOUBLEEQUALS EQUALS LESS GREATER LESSEQUALS GREATEREQUALS
 %nonassoc NOTEQUALS ADDEQUALS SUBEQUALS MULEQUALS DIVEQUALS MODEQUALS
 %left ADD SUB
-%left MULT DIV MOD
+%left MUL DIV MOD
 
 %left DOT CROCHETOUVRANT CROCHETFERMANT
 %left POW
@@ -129,7 +129,6 @@ quad * q;
 int qc = 1;
 
 bool isForLoop = false;
-bool isElseIf = false;
 qFifo * quadFifo;
 
 void yysuccess(char *s);
@@ -182,30 +181,31 @@ Expression:
                     default :
                         $$.type = -1;
                         break;
-                    }}else{
-                        getNom($1.symbole,nameString);
-                        sprintf($$.nameVariable,"%s%s%d%s",nameString,"[",$1.index,"]");
-                        getArrayElement($1.symbole, $1.index, valeurString);
-                        switch ($1.symbole->type){
-                            case TYPE_ARRAY_BOOLEAN:
-                                $$.booleanValue = strcmp(valeurString, "true") == 0;;
-                                $$.type = TYPE_BOOLEAN;
-                                break;
-                            case TYPE_ARRAY_FLOAT:
-                                $$.floatValue = atof(valeurString);
-                                $$.type = TYPE_FLOAT;
-                                break;
-                            case TYPE_ARRAY_INTEGER:
-                                $$.integerValue = atoi(valeurString);
-                                $$.type = TYPE_INTEGER;
-                                break;
-                            case TYPE_ARRAY_STRING:
-                                strcpy($$.stringValue, valeurString);
-                                $$.type = TYPE_STRING;
-                                break;
-                            default:
-                                $$.type = -1;
-                                break;
+                    }
+            }else{
+                    getNom($1.symbole,nameString);
+                    sprintf($$.nameVariable,"%s[%s]",nameString,$1.indexString);
+                    getArrayElement($1.symbole, $1.index, valeurString);
+                    switch ($1.symbole->type){
+                        case TYPE_ARRAY_BOOLEAN:
+                            $$.booleanValue = strcmp(valeurString, "true") == 0;;
+                            $$.type = TYPE_BOOLEAN;
+                            break;
+                        case TYPE_ARRAY_FLOAT:
+                            $$.floatValue = atof(valeurString);
+                            $$.type = TYPE_FLOAT;
+                            break;
+                        case TYPE_ARRAY_INTEGER:
+                            $$.integerValue = atoi(valeurString);
+                            $$.type = TYPE_INTEGER;
+                            break;
+                        case TYPE_ARRAY_STRING:
+                            strcpy($$.stringValue, valeurString);
+                            $$.type = TYPE_STRING;
+                            break;
+                        default:
+                            $$.type = -1;
+                            break;
                 }
             }
         }
@@ -223,7 +223,9 @@ Expression:
                 char qcString[20];
                 strcpy(buff, ($2.booleanValue == true) ? "true" : "false");
                 sprintf(qcString, "%s%d", "R",qc);
-                insererQuadreplet(&q, "NEG","", buff, "", qc);
+                strcpy($$.nameVariable,qcString);
+                $$.isVariable=true;
+                insererQuadreplet(&q, "NEG","", buff, qcString, qc);
                 qc++;
             }
             else
@@ -234,6 +236,7 @@ Expression:
     | SUB Expression {
             if($2.type != TYPE_STRING)
             {
+                
                 if($2.type == TYPE_INTEGER)
                 {
                     $$.type=TYPE_INTEGER;
@@ -243,7 +246,9 @@ Expression:
                     char qcString[20];
                     sprintf(buff, "%d", $2.integerValue);
                     sprintf(qcString, "%s%d", "R",qc);
-                    insererQuadreplet(&q, "SUB","0", buff, "", qc);
+                    strcpy($$.nameVariable,qcString);
+                    $$.isVariable=true;
+                    insererQuadreplet(&q, "SUB","0", buff, qcString, qc);
                     qc++;
                 }
                 else
@@ -257,7 +262,7 @@ Expression:
                         char qcString[20];
                         sprintf(buff, "%f", $2.floatValue);
                         sprintf(qcString, "%s%d", "R",qc);
-                        insererQuadreplet(&q, "SUB","0", buff, "", qc);
+                        insererQuadreplet(&q, "SUB","0", buff, qcString, qc);
                         qc++;
                     }
                 }
@@ -1959,7 +1964,7 @@ DeclarationInitialisation:
                 for(int i = 0; i< $3.length; i++){
                     char buff[255];
                     sprintf(buff, "%s[%d]", $1->nom, i);
-                    insererQuadreplet(&q, ":=", $3.tabValeur[i], "", "buff", qc);
+                    insererQuadreplet(&q, ":=", $3.tabValeur[i], "", buff, qc);
                     qc++;
                 };
             }else{
@@ -2051,11 +2056,18 @@ Affectation:
                 printf("Erreur sémantique : types non compatibles");
             }else{
                 char valeurString[255];
-                valeurToString($3,valeurString);
+
+
                 if($1.symbole->type < simpleToArrayOffset)
 
                     {
                         setValeur($1.symbole, valeurString);
+
+                        if($3.isVariable){
+                            strcpy(valeurString , $3.nameVariable);
+                        }else{
+                            valeurToString($3,valeurString);
+                        }
 
                         if(isForLoop){
                             pushFifo(quadFifo, creerQuadreplet(":=", valeurString, "", $1.symbole->nom, qc));
@@ -2070,7 +2082,14 @@ Affectation:
                         setArrayElement($1.symbole, $1.index, valeurString);
 
                         char buff[255];
-                        sprintf(buff, "%s[%d]", $1.symbole->nom, $1.index);
+                        sprintf(buff, "%s[%s]", $1.symbole->nom, $1.indexString);
+
+                        if($3.isVariable){
+                            strcpy(valeurString , $3.nameVariable);
+                        }else{
+                            valeurToString($3,valeurString);
+                        }
+
                         if(isForLoop){
                             pushFifo(quadFifo, creerQuadreplet(":=", valeurString, "", buff, qc));
                         }else{
@@ -2251,10 +2270,18 @@ Affectation:
                     };
 
                     char expressionValue[255];
-                    valeurToString($3, expressionValue);
+
+                    if($3.isVariable){
+                        strcpy(expressionValue , $3.nameVariable);
+                    }else{
+                        valeurToString($3, expressionValue);
+                    }
+
                     if($1.symbole->type < simpleToArrayOffset)
                         {
                             setValeur($1.symbole, valeurString);
+
+                            
                         if(isForLoop){
                             pushFifo(quadFifo, creerQuadreplet("ADD", $1.symbole->nom, expressionValue, $1.symbole->nom, qc));
                         }else{
@@ -2326,7 +2353,11 @@ Affectation:
                     };
 
                     char expressionValue[255];
-                    valeurToString($3, expressionValue);
+                    if($3.isVariable){
+                        strcpy(expressionValue , $3.nameVariable);
+                    }else{
+                        valeurToString($3, expressionValue);
+                    }
                     if($1.symbole->type < simpleToArrayOffset)
                         {
                             setValeur($1.symbole, valeurString);
@@ -2412,7 +2443,11 @@ Affectation:
                         
                     };
                     char expressionValue[255];
-                    valeurToString($3, expressionValue);
+                    if($3.isVariable){
+                        strcpy(expressionValue , $3.nameVariable);
+                    }else{
+                        valeurToString($3, expressionValue);
+                    }
                     if($1.symbole->type < simpleToArrayOffset)
                         {
                             setValeur($1.symbole, valeurString);
@@ -2494,7 +2529,11 @@ Affectation:
                         };
                         if(!abort){
                         char expressionValue[255];
-                        valeurToString($3, expressionValue);
+                        if($3.isVariable){
+                            strcpy(expressionValue , $3.nameVariable);
+                        }else{
+                            valeurToString($3, expressionValue);
+                        }
                         if($1.symbole->type < simpleToArrayOffset){
                             setValeur($1.symbole, valeurString);
                             if(isForLoop){
@@ -2565,25 +2604,32 @@ Affectation:
                             int result = valeur % valeurExpression;
                             sprintf(valeurString, "%d", result);
 
+                            char expressionValue[255];
+
+                            if($3.isVariable){
+                                strcpy(expressionValue , $3.nameVariable);
+                            }else{
+                                valeurToString($3, expressionValue);
+                            }
+
+                            sprintf(buff2, "%s", expressionValue);
                             sprintf(buff, "%s", nom);
-                            sprintf(buff2, "%d", valeurExpression);
                             sprintf(qcString, "%s%d", "R",qc);
 
                             if(isForLoop){
                                 pushFifo(quadFifo, creerQuadreplet("DIV",buff, buff2,qcString, qc));
                             }else{
-                            insererQuadreplet(&q, "DIV",buff, buff2,qcString, qc);
-                            qc++;
+                                insererQuadreplet(&q, "DIV",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             strcpy(buff, qcString);
-                            sprintf(buff2, "%d", valeurExpression);
                             sprintf(qcString, "%s%d", "R",qc);
 
                             if(isForLoop){
                                 pushFifo(quadFifo, creerQuadreplet("MUL",buff, buff2,qcString, qc +1));
                             }else{
-                            insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
-                            qc++;
+                                insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             strcpy(buff2, qcString);
 
@@ -2593,27 +2639,34 @@ Affectation:
                             double result = fmod(valeur ,$3.floatValue);
                             sprintf(valeurString, "%.4f", result);
 
+                            char expressionValue[255];
+
+                            if($3.isVariable){
+                                strcpy(expressionValue , $3.nameVariable);
+                            }else{
+                                valeurToString($3, expressionValue);
+                            }
+
+                            sprintf(buff2, "%s", expressionValue);
                             sprintf(buff, "%s", nom);
-                            sprintf(buff2, "%f", valeurExpression);
                             sprintf(qcString, "%s%d", "R",qc);
 
                             if(isForLoop){
                                 pushFifo(quadFifo, creerQuadreplet("DIV",buff, buff2,qcString, qc));
                             }else{
-                            insererQuadreplet(&q, "DIV",buff, buff2,qcString, qc);
-                            qc++;
+                                insererQuadreplet(&q, "DIV",buff, buff2,qcString, qc);
+                                qc++;
                             }
                             strcpy(buff, qcString);
-                            sprintf(buff2, "%f", valeurExpression);
                             sprintf(qcString, "%s%d", "R",qc);
 
                             if(isForLoop){
                                 pushFifo(quadFifo, creerQuadreplet("MUL",buff, buff2,qcString, qc +1));
                             }else{
-                            insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
-                            qc++;
+                                insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
+                                qc++;
                             }
-                            strcpy(buff2, qcString);
+                                strcpy(buff2, qcString);
 
                         };
                             if(isForLoop){
@@ -2677,7 +2730,6 @@ ConditionELSE:
         // sauvgardee dans la pile et updater le branchement de if avec l'adresse de fin if
         updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du la routine if
     }
-    | AvantElseIf Condition 
     | DebutElse Bloc ACCOLADEFERMANTE { // routine finElse
 	// ici on est a la fin du else
     // on met a jour l'addresse de jump vers la fin de else 
@@ -2687,14 +2739,6 @@ ConditionELSE:
 	// sauvgardee dans la pile et updater le branchement de else avec l'adresse debut de fin
 	updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine else
 
-    if(isElseIf){
-        char adresse[10];
-        sprintf(adresse,"%d",qc);
-        int sauv = depiler(stack);// depiler pour avoir la derniere adresse
-        // sauvgardee dans la pile et updater le branchement de if avec l'adresse de fin if
-        updateQuadreplet(q,sauv,adresse);
-        isElseIf = false;
-    }
 }
 ;
 DebutElse : ELSE ACCOLADEOUVRANTE { // routineElse
@@ -2709,20 +2753,6 @@ DebutElse : ELSE ACCOLADEOUVRANTE { // routineElse
     qc++;
 }
 ;
-
-AvantElseIf: ELSE {
-
-    char adresse[10];
-	sprintf(adresse,"%d",qc+1);
-    int sauv = depiler(stack);// depiler pour avoire la derniere addresse
-	// sauvgardee dans la pile et updater le branchement de IF avec l'dresse debut de else
-	updateQuadreplet(q,sauv,adresse);  // updater l'adresse de quadreplet crée au niveau du routine if
-    insererQuadreplet(&q,"BR","tmp","","",qc);
-    empiler(stack,qc);
-    qc++;
-
-    isElseIf = true;
-}
 
 While:
     DebutWhile Bloc ACCOLADEFERMANTE { // routineFinWhile
@@ -2920,7 +2950,13 @@ Variable:
                 printf("%s est une variable et non un tableau", $1);
                 $$.symbole = NULL;
             }else{
-                
+                if($3.isVariable){
+                    strcpy($$.indexString, $3.nameVariable);
+                }else{
+                    char indexString [20];
+                    valeurToString($3, indexString);
+                    strcpy($$.indexString, indexString);
+                }
                 $$.symbole = s;
                 $$.index = $3.integerValue;
             }
