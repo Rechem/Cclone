@@ -3,6 +3,10 @@
 %{
 #define simpleToArrayOffset 4
 #define YYDEBUG 1
+#define RESET "\033[0m"
+#define RED "\033[31m"     
+#define MAGENTA "\033[35m"
+#define GREEN "\033[32m" 
 %}
 
 %code requires{
@@ -129,10 +133,12 @@ quad * q;
 int qc = 1;
 
 bool isForLoop = false;
+bool hasFailed = false;
 qFifo * quadFifo;
 
 void yysuccess(char *s);
 void yyerror(const char *s);
+void yyerrorSemantic(char *s);
 void showLexicalError();
 %}
 %%
@@ -230,7 +236,7 @@ Expression:
             }
             else
             {
-                printf("Cannot find negatif of non boolean expression !\n");
+                yyerrorSemantic( "Non boolean expression found");
             }
     }
     | SUB Expression {
@@ -266,9 +272,8 @@ Expression:
                         qc++;
                     }
                 }
-            }
-            else{
-                printf("Cannot get negative of non numeric expression ! \n");
+            }else{
+                yyerrorSemantic( "Non numeric expression found");
             }
     }
     | ADD Expression {
@@ -289,7 +294,7 @@ Expression:
                 }
             }
             else{
-                printf("Cannot get negative of non numeric expression ! \n");
+                yyerrorSemantic( "Non numeric expression found");
             }
     }
     | Expression ADD Expression {
@@ -459,14 +464,14 @@ Expression:
             }
             else
             {
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression SUB Expression {
             if($1.type == $3.type){
                     if($1.type == TYPE_STRING)
                     {
-                        printf("Type mismatch\n");
+                        yyerrorSemantic( "Type mismatch");
                     }
                     else{
                         if($1.type == TYPE_INTEGER)
@@ -551,14 +556,14 @@ Expression:
             }
             else
             {
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression MUL Expression {
             if($1.type == $3.type){
                     if($1.type == TYPE_STRING)
                     {
-                        printf("Type mismatch\n");
+                        yyerrorSemantic( "Type mismatch");
                     }
                     else{
                         if($1.type == TYPE_INTEGER)
@@ -692,20 +697,20 @@ Expression:
             }
             else
             {
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression MOD Expression {
             if($1.type == $3.type){
                     if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
                     {
-                        printf("Division on zero\n");
+                        yyerrorSemantic( "Division by zero");
                     }
                     else
                     {
                         if($$.type == TYPE_STRING)
                         {
-                            printf("Type mismatch\n");
+                            yyerrorSemantic( "Type mismatch");
                         }
                         else{
                             if($$.type == TYPE_INTEGER)
@@ -861,20 +866,20 @@ Expression:
             }
             else
             {
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression DIV Expression {
             if($1.type == $3.type){
                     if((($3.type == TYPE_INTEGER) && ($3.integerValue == 0)) || (($3.type == TYPE_FLOAT) && ($3.floatValue == 0.0)))
                     {
-                        printf("Division on zero\n");
+                        yyerrorSemantic( "Division by zero");
                     }
                     else
                     {
                         if($1.type == TYPE_STRING)
                         {
-                            printf("Type mismatch\n");
+                            yyerrorSemantic( "Type mismatch");
                         }
                         else{
                             if($1.type == TYPE_INTEGER)
@@ -968,14 +973,14 @@ Expression:
             }
             else
             {
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression POW Expression {
             if(($1.type == $3.type)){
                 if($1.type == TYPE_STRING)
                     {
-                        printf("Type mismatch\n");
+                        yyerrorSemantic( "Type mismatch");
                     }
                     else{
                         if($1.type == TYPE_INTEGER)
@@ -1118,7 +1123,7 @@ Expression:
                     }
             }
             else{
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression LESS Expression {
@@ -1260,7 +1265,7 @@ Expression:
             }
             else
             {
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression LESSEQUALS Expression {
@@ -1402,7 +1407,7 @@ Expression:
             }
             else
             {
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression GREATER Expression {
@@ -1458,7 +1463,6 @@ Expression:
                                 if($1.integerValue > $3.integerValue)
                                 {
                                     $$.booleanValue=true;
-                                    printf("%d\n",$$.booleanValue);
                                 }
                                 else{
                                     $$.booleanValue=false;
@@ -1546,7 +1550,7 @@ Expression:
             }
             else
             {
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression GREATEREQUALS Expression {
@@ -1688,7 +1692,7 @@ Expression:
             }
             else
             {
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression DOUBLEEQUALS Expression {
@@ -1830,7 +1834,7 @@ Expression:
             }
             else
             {
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
     }
     | Expression AND Expression {
@@ -1879,7 +1883,7 @@ Expression:
         }
         else
         {
-            printf("Type missmatch\n");
+            yyerrorSemantic( "Type missmatch");
         }
     }
     | Expression OR Expression {
@@ -1928,7 +1932,7 @@ Expression:
         }
         else
         {
-            printf("Type missmatch\n");         
+            yyerrorSemantic( "Type missmatch");         
         }
 
     }
@@ -1951,14 +1955,13 @@ DeclarationInitialisation:
                 }
                 qc++;
             }else{
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
         }
     }
     |Declaration EQUALS Tableau {
         if($1 != NULL && $3.type >= simpleToArrayOffset){
             if( $1->type == $3.type){
-                printf("Type match\n");
                 setTabValeur($1, $3.tabValeur, $3.length);
 
                 for(int i = 0; i< $3.length; i++){
@@ -1968,7 +1971,7 @@ DeclarationInitialisation:
                     qc++;
                 };
             }else{
-                printf("Type mismatch\n");
+                yyerrorSemantic( "Type mismatch");
             }
         }
     }
@@ -1983,7 +1986,7 @@ Declaration:
             insererSymbole(&tableSymboles, nouveauSymbole);
             $$ = nouveauSymbole;
         }else{
-            printf("Identifiant deja declare : %s\n", $2);
+            yyerrorSemantic( "Id already declared");
             $$ = NULL;
         }
     }
@@ -1995,7 +1998,7 @@ Declaration:
             insererSymbole(&tableSymboles, nouveauSymbole);
             $$ = nouveauSymbole;
         }else{
-            printf("Identifiant deja declare : %s\n", $3);
+            yyerrorSemantic( "Id already declared ");
             $$ = NULL;
         }
     }
@@ -2003,7 +2006,7 @@ Declaration:
         if(rechercherSymbole(tableSymboles, $6) == NULL){
             // Si l'ID n'existe pas alors l'inserer
             if($4.type != TYPE_INTEGER || $4.integerValue < 1){
-                printf("La dimension du tableau doit etre un entier positif\n");
+                yyerrorSemantic( "Array dimension must be a positive integer");
             }else{
                 symbole * nouveauSymbole = creerSymbole($6, $2 + simpleToArrayOffset, false, $4.integerValue);
                 insererSymbole(&tableSymboles, nouveauSymbole);
@@ -2019,7 +2022,7 @@ Declaration:
                 qc++;
             };
         }else{
-            printf("Identifiant deja declare : %s\n", $6);
+            yyerrorSemantic( "Id already declared");
             $$ = NULL;
         }
     }
@@ -2027,7 +2030,7 @@ Declaration:
         if(rechercherSymbole(tableSymboles, $7) == NULL){
             // Si l'ID n'existe pas alors l'inserer
             if($5.type != TYPE_INTEGER || $5.integerValue < 1){
-                printf("La dimension du tableau doit etre un entier positif\n");
+                yyerrorSemantic( "Array dimension must be a positive integer");
             }else{
                 symbole * nouveauSymbole = creerSymbole($7, $3 + simpleToArrayOffset, true, $5.integerValue);
                 insererSymbole(&tableSymboles, nouveauSymbole);
@@ -2043,7 +2046,7 @@ Declaration:
                 qc++;
             };
         }else{
-            printf("Identifiant deja declare : %s\n", $7);
+            yyerrorSemantic( "Id already declared");
             $$ = NULL;
         }
     }
@@ -2052,11 +2055,13 @@ Declaration:
 Affectation:
     Variable EQUALS Expression { 
         if($1.symbole != NULL){
+            if($1.symbole->isConstant && $1.symbole->hasBeenInitialized){
+                yyerrorSemantic("Cannot reassign a value to a constant");
+            }else{
             if($1.symbole->type % simpleToArrayOffset != $3.type ){
-                printf("Erreur sémantique : types non compatibles");
+                yyerrorSemantic( "Type mismatch");
             }else{
                 char valeurString[255];
-
 
                 if($1.symbole->type < simpleToArrayOffset)
 
@@ -2100,16 +2105,20 @@ Affectation:
 
             }
         }
+        }
 
     }        
     | Variable INC {
         if($1.symbole != NULL){
             if(!$1.symbole->hasBeenInitialized){
-                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+                yyerrorSemantic( "Variable not initialized");
             }else{
+                if($1.symbole->isConstant){
+                    yyerrorSemantic("Cannot reassign a value to a constant");
+                }else{
                 if($1.symbole->type % simpleToArrayOffset != TYPE_FLOAT
                 && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
-                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                    yyerrorSemantic( "Non numeric variable found");
                 }else{
 
                     char valeurString[255];
@@ -2165,16 +2174,20 @@ Affectation:
                 }
             }
         }
+        }
             
     }
     | Variable DEC {
         if($1.symbole != NULL){
             if(!$1.symbole->hasBeenInitialized){
-                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+                yyerrorSemantic( "Variable not initialized");
+            }else{
+                if($1.symbole->isConstant){
+                yyerrorSemantic("Cannot reassign a value to a constant");
             }else{
                 if($1.symbole->type % simpleToArrayOffset != TYPE_FLOAT
                 && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
-                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                    yyerrorSemantic( "Non numeric variable found");
                 }else{
                     char valeurString[255];
                     
@@ -2222,15 +2235,19 @@ Affectation:
 
                 }
             }
+            }
         }
     }     
     | Variable ADDEQUALS Expression {
         if($1.symbole != NULL){
             if(!$1.symbole->hasBeenInitialized){
-                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+                yyerrorSemantic( "Variable not initialized");
+            }else{
+                if($1.symbole->isConstant){
+                yyerrorSemantic("Cannot reassign a value to a constant");
             }else{
                 if($1.symbole->type % simpleToArrayOffset != $3.type){
-                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                    yyerrorSemantic( "Type mismatch");
                 }else{
                     char valeurString[255];
                     
@@ -2304,6 +2321,7 @@ Affectation:
                             qc++;
                         }
                         }
+                }
 
                 }
             }
@@ -2312,14 +2330,17 @@ Affectation:
     | Variable SUBEQUALS Expression {
         if($1.symbole != NULL){
             if(!$1.symbole->hasBeenInitialized){
-                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+                yyerrorSemantic( "Variable not initialized");
+            }else{
+                if($1.symbole->isConstant){
+                yyerrorSemantic("Cannot reassign a value to a constant");
             }else{
                 if($1.symbole->type % simpleToArrayOffset != $3.type){
-                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                    yyerrorSemantic( "Type mismatch");
                 }else{
                     if($1.symbole->type % simpleToArrayOffset != TYPE_FLOAT
                     && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
-                        printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                        yyerrorSemantic( "Non numeric variable found");
                     }else{
 
                     char valeurString[255];
@@ -2385,21 +2406,25 @@ Affectation:
                         }
                     }
                 }
+                }
             }
         }
     }
     | Variable MULEQUALS Expression {
         if($1.symbole != NULL){
             if(!$1.symbole->hasBeenInitialized){
-                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+                yyerrorSemantic( "Variable not initialized");
+            }else{
+                if($1.symbole->isConstant){
+                yyerrorSemantic("Cannot reassign a value to a constant");
             }else{
                 if($1.symbole->type % simpleToArrayOffset != $3.type){
-                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                    yyerrorSemantic( "Type mismatch");
                 }else{
                     if($1.symbole->type % simpleToArrayOffset != TYPE_FLOAT
                     && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER
                     && $1.symbole->type % simpleToArrayOffset != TYPE_BOOLEAN){
-                        printf("Erreur sémantique : cette variable nest pas de type entier ou réel ou boolean");
+                        yyerrorSemantic( "Non numeric non boolean variable found");
                     }else{
 
                     char valeurString[255];
@@ -2476,19 +2501,23 @@ Affectation:
                     }
                 }
             }
+            }
         }
     }
     | Variable DIVEQUALS Expression {
         if($1.symbole != NULL){
             if(!$1.symbole->hasBeenInitialized){
-                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+                yyerrorSemantic( "Variable not initialized");
+            }else{
+                if($1.symbole->isConstant){
+                yyerrorSemantic("Cannot reassign a value to a constant");
             }else{
                 if($1.symbole->type % simpleToArrayOffset != $3.type){
-                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                    yyerrorSemantic( "Type mismatch");
                 }else{
                     if($1.symbole->type % simpleToArrayOffset != TYPE_FLOAT
                     && $1.symbole->type % simpleToArrayOffset != TYPE_INTEGER){
-                        printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                        yyerrorSemantic( "Non numeric variable found");
                     }else{
                         
                         char valeurString[255];
@@ -2559,25 +2588,29 @@ Affectation:
                             }
                         }
                         }else{
-                            printf("Erreur semantique : division par zero\n");
+                            yyerrorSemantic( "Division by zero");
                         }
 
                     }
                 }
+            }
             }
         }
     }
     | Variable MODEQUALS Expression {
         if($1.symbole != NULL){
             if(!$1.symbole->hasBeenInitialized){
-                printf("Erreur sémantique : La variable n'a pas ete initialisee");
+                yyerrorSemantic( "Variable not initialized");
+            }else{
+                if($1.symbole->isConstant){
+                yyerrorSemantic("Cannot reassign a value to a constant");
             }else{
                 if($1.symbole->type % simpleToArrayOffset != $3.type){
-                    printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                    yyerrorSemantic( "Type mismatch");
                 }else{
                     if($1.symbole->type % simpleToArrayOffset != TYPE_INTEGER
                     && $1.symbole->type % simpleToArrayOffset != TYPE_FLOAT){
-                        printf("Erreur sémantique : cette variable nest pas de type entier ou réel");
+                        yyerrorSemantic( "Non numeric variable found");
                     }else{
 
                         char valeurString[255];
@@ -2687,6 +2720,7 @@ Affectation:
                     }
                 }
             }
+            }
         }
     }
     ;
@@ -2716,7 +2750,7 @@ DebutIf :
 		empiler(stack,qc); // on sauvgarde l'addresse de cette quadreplet 
 		qc++;
     }else{
-        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
+        yyerrorSemantic( "Non boolean expression found");
     }
 }
 ;
@@ -2786,7 +2820,7 @@ DebutWhile :
         // quadreplet
 		qc++;
     }else{
-        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
+        yyerrorSemantic( "Non boolean expression found");
     }
 }
 ;
@@ -2843,7 +2877,7 @@ DebutFor:
 		qc++;
         isForLoop = false;
     }else{
-        printf("Erreur sémantique : cannot evaluate non boolean expression as condition");
+        yyerrorSemantic( "Non boolean expression found");
     }
 }
 ;
@@ -2889,7 +2923,7 @@ Tableau:
             $$.length += 1;
         } else {
             $$.type = -1;
-            printf("Le tableau doit contenir un seul type de donnees\n");
+            yyerrorSemantic( "Type mismatch");
         }
     }
     ;
@@ -2926,10 +2960,10 @@ Variable:
     ID {
         symbole * s = rechercherSymbole(tableSymboles, $1);
         if(s==NULL){
-            printf("Variable inconnue: %s", $1);
+            yyerrorSemantic( "Unknown variable");
             $$.symbole = NULL;
         }else if(s->type >= simpleToArrayOffset){
-            printf("Mauvais referencement du tableau %s, voulez-vous dire %s[<index>]", $1, $1);
+            yyerrorSemantic( "Wrong array referencement syntax, did you mean ID[<index>]");
             $$.symbole = NULL;
         }else{
             $$.symbole = s;
@@ -2938,18 +2972,20 @@ Variable:
     }
     |ID CROCHETOUVRANT Expression CROCHETFERMANT {
         if($3.type != TYPE_INTEGER){
-            printf("L'index doit etre un entier");
+            yyerrorSemantic( "Non integer variable found");
             $$.symbole = NULL;
         }else{
 
             symbole * s = rechercherSymbole(tableSymboles, $1);
             if(s==NULL){
-                printf("Variable inconnue: %s", $1);
+                yyerrorSemantic( "Unknown variable");
                 $$.symbole = NULL;
             }else if(s->type < simpleToArrayOffset){
-                printf("%s est une variable et non un tableau", $1);
+                yyerrorSemantic( "%s is not an array");
                 $$.symbole = NULL;
             }else{
+                    if($3.integerValue >= s->array->length )
+                    yyerrorSemantic("Index out bounds");
                 if($3.isVariable){
                     strcpy($$.indexString, $3.nameVariable);
                 }else{
@@ -2967,12 +3003,18 @@ Variable:
 %%
 
 void yysuccess(char *s){
-    // fprintf(stdout, "%d: %s\n", yylineno, s);
     currentColumn+=yyleng;
 }
 
 void yyerror(const char *s) {
-  fprintf(stdout, "File '%s', line %d, character %d :  %s \n", file, yylineno, currentColumn, s);
+    fprintf(stdout, "File '%s', line %d, character %d :"GREEN" %s "RESET"\n", file, yylineno, currentColumn, s);
+    hasFailed = true;
+}
+
+void yyerrorSemantic(char *s){
+    fprintf(stdout, "File '%s', line %d, character %d, ssemantic error: " RED " %s " RESET "\n", file, yylineno, currentColumn, s);
+    hasFailed = true;
+    return;
 }
 
 int main (void)
@@ -2980,7 +3022,7 @@ int main (void)
     // yydebug = 1;
     yyin=fopen(file, "r");
     if(yyin==NULL){
-        printf("erreur dans l'ouverture du fichier");
+        printf("Erreur dans louverture du fichier\n");
         return 1;
     }
 
@@ -2988,18 +3030,21 @@ int main (void)
     quadFifo = initializeFifo();
 
     yyparse();  
-    
+    if (!hasFailed){
+
     afficherTableSymboles(tableSymboles);
     
     afficherQuad(q);
+    }
     
     if(tableSymboles != NULL){
         free(tableSymboles);
     }
 
+    free(stack);
+    free(quadFifo);
     fclose(yyin);
 
-    // printf("succ\n");
 
     return 0;
 }
@@ -3021,7 +3066,7 @@ void showLexicalError() {
     printf("%s%s", introError, line);  
     int j=1;
     while(j<currentColumn+strlen(introError)) { printf(" "); j++; }
-    printf("^\n");
+    printf("^");
 
 
 }

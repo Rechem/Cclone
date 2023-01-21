@@ -4,6 +4,8 @@
 #include <string.h>
 #include "tableSymboles.h"
 
+extern void yyerrorSemantic(char *s);
+
 symbole * _allouerSymbole(){
     symbole * pointer = (symbole *) malloc(sizeof(symbole));
     return pointer;
@@ -97,7 +99,6 @@ symbole * rechercherSymbole(symbole * tableSymboles, char * nom){
 
 void getNom(symbole * symbole, char * nom){
     if(symbole == NULL || nom == NULL){
-        printf("No nom type because NULL");
         return;
     }
     strcpy(nom, symbole->nom);
@@ -105,7 +106,6 @@ void getNom(symbole * symbole, char * nom){
 
 void getValeur(symbole * symbole, char * valeur){
     if(symbole == NULL || !symbole->hasBeenInitialized || valeur == NULL){
-        printf("No valeur type because NULL");
         return;
     }
     strcpy(valeur, symbole->valeur);
@@ -113,7 +113,6 @@ void getValeur(symbole * symbole, char * valeur){
 
 int getType(symbole * symbole){
     if(symbole == NULL){
-        printf("No type because NULL");    
         return -1;
     }
 
@@ -156,7 +155,6 @@ void _mapTypeIntToChar(int type, char * typeChar){
 
 void getTypeChar(symbole * symbole, char * type){
     if(symbole == NULL || type == NULL){
-        printf("No char type because NULL");
         return;
     }
 
@@ -167,27 +165,22 @@ void getTypeChar(symbole * symbole, char * type){
 void setValeur(symbole * symbole, char * valeur){
 
     if(symbole == NULL){
-        printf("Value not set because symbole is NULL");
         return;
     }
 
     if(symbole->hasBeenInitialized && symbole->isConstant){
-        printf("Can't reassign a vlue to a constant");
         return;
     }
 
     if(symbole->type <= 3)
         strcpy(symbole->valeur, valeur);
-    else{
-        printf("Can't assign simple type to array\n");
-    }
+    
     symbole->hasBeenInitialized = true;
 
 }
 
 void setTabValeur(symbole * symbole, char tabValeur[ROWS][COLS], int length){
     if(symbole == NULL){
-        printf("Value not set because symbole is NULL");
         return;
     }
 
@@ -202,7 +195,6 @@ void setTabValeur(symbole * symbole, char tabValeur[ROWS][COLS], int length){
         }
         symbole->array->length = length;
     }else{
-        printf("Can't assign array to simple type\n");
     }
     symbole->hasBeenInitialized = true;
 }
@@ -210,11 +202,9 @@ void setTabValeur(symbole * symbole, char tabValeur[ROWS][COLS], int length){
 void getArrayElement(symbole * symbole, int index, char * valeur){
     if(symbole == NULL || symbole->type <= 3 || !symbole->hasBeenInitialized
     || valeur== NULL || index < 0){
-        printf("No valeur type because NULL");
         return;
     }
     if(index >= symbole->array->length){
-        printf("Index out of bound");
         strcpy(valeur, "-1");
     }else
         strcpy(valeur, symbole->array->tabValeur[symbole->array->length - index -1]);
@@ -223,12 +213,9 @@ void getArrayElement(symbole * symbole, int index, char * valeur){
 void setArrayElement(symbole * symbole, int index, char * valeur){
     if(symbole == NULL || symbole->type <= 3 || !symbole->hasBeenInitialized
     || valeur== NULL || index < 0){
-        printf("No valeur type because NULL");
         return;
     }
-    printf("zebda %s\n\n\n\n", valeur);
     if(index >= symbole->array->length){
-        printf("Index out of bound");
         strcpy(valeur, "-1");
     }else
     strcpy(symbole->array->tabValeur[symbole->array->length - index -1], valeur);
