@@ -2812,7 +2812,7 @@ DebutWhile :
     // ici c'est le debut de while
     if($2.type == TYPE_BOOLEAN){
         char r[10]; // contien le resultat de l'expression de la condition
-        sprintf(r,"R%d",qc);	// this writes R to the r string
+        sprintf(r,"R%d",qc-1);	// this writes R to the r string
 		insererQuadreplet(&q,"BZ","tmp","",r,qc); // jump if condition returns false(0) 
         // to finWhile
 		empiler(stack,qc); // on sauvgarde l'addresse de cette quadreplet pour updater le
