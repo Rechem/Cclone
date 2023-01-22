@@ -38,6 +38,7 @@
 }
 
 // les terminaux only
+%token <identifier> ID
 %token IMPORT
 %token FUN
 %token CONST
@@ -50,8 +51,6 @@
 %token FOR
 %token IN
 %token RETURN
-
-%token <identifier> ID
 
 %token <integerValue> INT
 %token <stringValue> STRING
@@ -3066,7 +3065,8 @@ void showLexicalError() {
     printf("%s%s", introError, line);  
     int j=1;
     while(j<currentColumn+strlen(introError)) { printf(" "); j++; }
-    printf("^");
+    printf("^\n");
+    hasFailed=true;
 
 
 }
