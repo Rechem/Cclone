@@ -438,7 +438,7 @@ Expression:
                                         if($1.isVariable == true)
                                         {
                                             strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
-                                            insererQuadreplet(&q, "ADD",$1.nameVariable, buff2, qcString, qc);
+                                            insererQuadreplet(&q, "ADD",$1.nameVariable, buff, qcString, qc);
                                         }
                                         else
                                         {
@@ -450,7 +450,7 @@ Expression:
                                             else
                                             {
                                                 strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
-                                                strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                                                strcpy(buff2, ($3.booleanValue == true) ? "true" : "false");
                                                 insererQuadreplet(&q, "ADD",buff, buff2,qcString, qc);
                                             }
                                         }
@@ -671,7 +671,7 @@ Expression:
                                         if($1.isVariable == true)
                                         {
                                             strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
-                                            insererQuadreplet(&q, "MUL",$1.nameVariable, buff2, qcString, qc);
+                                            insererQuadreplet(&q, "MUL",$1.nameVariable, buff, qcString, qc);
                                         }
                                         else
                                         {
@@ -683,7 +683,7 @@ Expression:
                                             else
                                             {
                                                 strcpy(buff, ($1.booleanValue == true) ? "true" : "false");
-                                                strcpy(buff, ($3.booleanValue == true) ? "true" : "false");
+                                                strcpy(buff2, ($3.booleanValue == true) ? "true" : "false");
                                                 insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
                                             }
                                         }
@@ -731,6 +731,9 @@ Expression:
                                         qc++;
                                         sprintf(qcString, "%s%d", "R",qc);
                                         insererQuadreplet(&q, "SUB",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        sprintf(qcString, "%s%d", "R",qc);
+                                        strcpy($$.nameVariable,qcString);
+                                        $$.isVariable=true;
                                         qc++;
                                     }
                                     else
@@ -747,6 +750,9 @@ Expression:
                                             strcpy(buff2, qcString);
                                             sprintf(qcString, "%s%d", "R",qc);
                                             insererQuadreplet(&q, "SUB",$1.nameVariable, buff2,qcString, qc);
+                                            sprintf(qcString, "%s%d", "R",qc);
+                                            strcpy($$.nameVariable,qcString);
+                                            $$.isVariable=true;
                                             qc++;
                                         }
                                         else
@@ -763,6 +769,9 @@ Expression:
                                                 sprintf(buff, "%d", $1.integerValue);
                                                 sprintf(qcString, "%s%d", "R",qc);
                                                 insererQuadreplet(&q, "SUB",buff, $3.nameVariable,qcString, qc);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                strcpy($$.nameVariable,qcString);
+                                                $$.isVariable=true;
                                                 qc++;
                                             }
                                             else
@@ -780,6 +789,9 @@ Expression:
                                                 strcpy(buff2, qcString);
                                                 sprintf(qcString, "%s%d", "R",qc);
                                                 insererQuadreplet(&q, "SUB",buff, buff2,qcString, qc);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                strcpy($$.nameVariable,qcString);
+                                                $$.isVariable=true;
                                                 qc++;
                                             }
                                         }
@@ -805,6 +817,9 @@ Expression:
                                         qc++;
                                         sprintf(qcString, "%s%d", "R",qc);
                                         insererQuadreplet(&q, "SUB",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        sprintf(qcString, "%s%d", "R",qc);
+                                        strcpy($$.nameVariable,qcString);
+                                        $$.isVariable=true;
                                         qc++;
                                     }
                                     else
@@ -821,6 +836,9 @@ Expression:
                                             strcpy(buff2, qcString);
                                             sprintf(qcString, "%s%d", "R",qc);
                                             insererQuadreplet(&q, "SUB",$1.nameVariable, buff2,qcString, qc);
+                                            sprintf(qcString, "%s%d", "R",qc);
+                                            strcpy($$.nameVariable,qcString);
+                                            $$.isVariable=true;
                                             qc++;
                                         }
                                         else
@@ -837,6 +855,9 @@ Expression:
                                                 sprintf(buff, "%f", $1.floatValue);
                                                 sprintf(qcString, "%s%d", "R",qc);
                                                 insererQuadreplet(&q, "SUB",buff, $3.nameVariable,qcString, qc);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                strcpy($$.nameVariable,qcString);
+                                                $$.isVariable=true;
                                                 qc++;
                                             }
                                             else
@@ -854,6 +875,9 @@ Expression:
                                                 strcpy(buff2, qcString);
                                                 sprintf(qcString, "%s%d", "R",qc);
                                                 insererQuadreplet(&q, "SUB",buff, buff2,qcString, qc);
+                                                sprintf(qcString, "%s%d", "R",qc);
+                                                strcpy($$.nameVariable,qcString);
+                                                $$.isVariable=true;
                                                 qc++;
                                             }
                                         }
@@ -977,6 +1001,7 @@ Expression:
     }
     | Expression POW Expression {
             if(($1.type == $3.type)){
+                int saveQc=0;
                 if($1.type == TYPE_STRING)
                     {
                         yyerrorSemantic( "Type mismatch");
@@ -991,29 +1016,33 @@ Expression:
                             int cpt = 0;
                             sprintf(qcString, "%s%d", "R",qc);
                             strcpy($$.nameVariable,qcString);
-                            $$.isVariable=true;
+                            $$.isVariable=true; 
                             if($1.isVariable == true && $3.isVariable == true)
                                     {
+                                        strcpy(buff, $1.nameVariable);
                                         while(cpt<$3.integerValue)
                                         {
-                                            insererQuadreplet(&q, "MUL",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                            insererQuadreplet(&q, "MUL",buff, $3.nameVariable,qcString, qc);
                                             strcpy(buff, qcString);
                                             qc++;
                                             sprintf(qcString, "%s%d", "R",qc);
+                                            saveQc=qc;
                                             cpt++;
-                                        }
+                                        } 
                                     }
                                     else
                                     {
                                         if($1.isVariable == true)
                                         {
                                             sprintf(buff2, "%d", $3.integerValue);
+                                            strcpy(buff, $1.nameVariable);
                                             while(cpt<$3.integerValue)
                                             {
-                                                insererQuadreplet(&q, "MUL",$1.nameVariable, buff2,qcString, qc);
+                                                insererQuadreplet(&q, "MUL",buff, buff2,qcString, qc);
                                                 strcpy(buff, qcString);
                                                 qc++;
                                                 sprintf(qcString, "%s%d", "R",qc);
+                                                saveQc=qc;
                                                 cpt++;
                                             }
                                         }
@@ -1028,6 +1057,7 @@ Expression:
                                                     strcpy(buff, qcString);
                                                     qc++;
                                                     sprintf(qcString, "%s%d", "R",qc);
+                                                    saveQc=qc;
                                                     cpt++;
                                                 }
                                             }
@@ -1041,13 +1071,12 @@ Expression:
                                                     strcpy(buff, qcString);
                                                     qc++;
                                                     sprintf(qcString, "%s%d", "R",qc);
+                                                    saveQc=qc;
                                                     cpt++;
                                                 }
                                             }
                                         }
-                                    }
-                                    
-                            
+                                    }    
                         }
                         else {
                             if($1.type == TYPE_FLOAT && $3.type == TYPE_INTEGER)
@@ -1070,6 +1099,7 @@ Expression:
                                                 strcpy(buff, qcString);
                                                 qc++;
                                                 sprintf(qcString, "%s%d", "R",qc);
+                                                saveQc=qc;
                                                 cpt++;
                                             }
                                         }
@@ -1084,6 +1114,7 @@ Expression:
                                                     strcpy(buff, qcString);
                                                     qc++;
                                                     sprintf(qcString, "%s%d", "R",qc);
+                                                    saveQc=qc;
                                                     cpt++;
                                                 }
                                             }
@@ -1098,6 +1129,7 @@ Expression:
                                                         strcpy(buff, qcString);
                                                         qc++;
                                                         sprintf(qcString, "%s%d", "R",qc);
+                                                        saveQc=qc;
                                                         cpt++;
                                                     }
                                                 }
@@ -1111,6 +1143,7 @@ Expression:
                                                         strcpy(buff, qcString);
                                                         qc++;
                                                         sprintf(qcString, "%s%d", "R",qc);
+                                                        saveQc=qc;
                                                         cpt++;
                                                     }
                                                 }
@@ -1120,6 +1153,11 @@ Expression:
                                 }
                             }
                     }
+                    saveQc--;
+                    char saveQcString[255];
+                    sprintf(saveQcString, "%s%d", "R",saveQc);
+                    strcpy($$.nameVariable,saveQcString);
+                    $$.isVariable=true;
             }
             else{
                 yyerrorSemantic( "Type mismatch");
