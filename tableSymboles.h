@@ -12,7 +12,6 @@
 #define ROWS 128
 #define COLS 32
 
-//not sure if we wanna support arrays
 typedef struct arraySubSymbol arraySubSymbol;
 struct arraySubSymbol{
     char tabValeur[ROWS][COLS];

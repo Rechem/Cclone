@@ -1752,27 +1752,27 @@ Expression:
                             $$.isVariable=true;
                             if($1.isVariable == true && $3.isVariable == true)
                             {
-                                insererQuadreplet(&q, "ET",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                insererQuadreplet(&q, "EQ",$1.nameVariable, $3.nameVariable,qcString, qc);
                             }
                             else
                             {
                                 if($1.isVariable==true)
                                 {
                                     strcpy(buff2, $3.stringValue);
-                                    insererQuadreplet(&q, "ET",$1.nameVariable, buff2,qcString, qc);
+                                    insererQuadreplet(&q, "EQ",$1.nameVariable, buff2,qcString, qc);
                                 }
                                 else
                                 {
                                     if($3.isVariable==true)
                                     {
                                         strcpy(buff, $1.stringValue);
-                                        insererQuadreplet(&q, "ET",buff, $3.nameVariable,qcString, qc);
+                                        insererQuadreplet(&q, "EQ",buff, $3.nameVariable,qcString, qc);
                                     }
                                     else
                                     {
                                         strcpy(buff, $1.stringValue);
                                         strcpy(buff2, $3.stringValue);
-                                        insererQuadreplet(&q, "ET",buff, buff2,qcString, qc);
+                                        insererQuadreplet(&q, "EQ",buff, buff2,qcString, qc);
                                     }
                                 }
                             }
@@ -1796,27 +1796,27 @@ Expression:
                                 $$.isVariable=true;
                                 if($1.isVariable == true && $3.isVariable == true)
                                 {
-                                    insererQuadreplet(&q, "ET",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                    insererQuadreplet(&q, "EQ",$1.nameVariable, $3.nameVariable,qcString, qc);
                                 }
                                 else
                                 {
                                     if($1.isVariable==true)
                                     {
                                         sprintf(buff2, "%d", $3.integerValue);
-                                        insererQuadreplet(&q, "ET",$1.nameVariable, buff2,qcString, qc);
+                                        insererQuadreplet(&q, "EQ",$1.nameVariable, buff2,qcString, qc);
                                     }
                                     else
                                     {
                                         if($3.isVariable==true)
                                         {
                                             sprintf(buff, "%d", $1.integerValue);
-                                            insererQuadreplet(&q, "ET",buff, $3.nameVariable,qcString, qc);
+                                            insererQuadreplet(&q, "EQ",buff, $3.nameVariable,qcString, qc);
                                         }
                                         else
                                         {
                                             sprintf(buff, "%d", $1.integerValue);
                                             sprintf(buff2, "%d", $3.integerValue);
-                                            insererQuadreplet(&q, "ET",buff, buff2,qcString, qc);
+                                            insererQuadreplet(&q, "EQ",buff, buff2,qcString, qc);
                                         }
                                     }
                                 }
@@ -1841,27 +1841,27 @@ Expression:
                                     $$.isVariable=true;
                                     if($1.isVariable == true && $3.isVariable == true)
                                     {
-                                        insererQuadreplet(&q, "ET",$1.nameVariable, $3.nameVariable,qcString, qc);
+                                        insererQuadreplet(&q, "EQ",$1.nameVariable, $3.nameVariable,qcString, qc);
                                     }
                                     else
                                     {
                                         if($1.isVariable==true)
                                         {
                                             sprintf(buff2, "%f", $3.floatValue);
-                                            insererQuadreplet(&q, "ET",$1.nameVariable, buff2,qcString, qc);
+                                            insererQuadreplet(&q, "EQ",$1.nameVariable, buff2,qcString, qc);
                                         }
                                         else
                                         {
                                             if($3.isVariable==true)
                                             {
                                                 sprintf(buff, "%f", $1.floatValue);
-                                                insererQuadreplet(&q, "ET",buff, $3.nameVariable,qcString, qc);
+                                                insererQuadreplet(&q, "EQ",buff, $3.nameVariable,qcString, qc);
                                             }
                                             else
                                             {
                                                 sprintf(buff, "%f", $1.floatValue);
                                                 sprintf(buff2, "%f", $3.floatValue);
-                                                insererQuadreplet(&q, "ET",buff, buff2,qcString, qc);
+                                                insererQuadreplet(&q, "EQ",buff, buff2,qcString, qc);
                                             }
                                         }
                                     }
